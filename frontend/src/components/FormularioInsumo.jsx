@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Icon } from "./Icon.jsx";
-import { OBRAS, hojeISO } from "../constants.js";
+import { OBRAS, RESPONSAVEIS_CHAMADO, hojeISO } from "../constants.js";
 
 const ETAPA = { LOCAL_TIPO: "local-tipo", LOCAL_OBRA: "local-obra", DETALHES: "detalhes" };
 
@@ -13,6 +13,7 @@ function formVazio(usuario) {
     detalhes: "",
     marca: "",
     aplicacao: "",
+    responsavelChamado: "",
     solicitanteNome: usuario?.nome || "",
     solicitanteEmail: usuario?.email || "",
     data: hojeISO(),
@@ -58,7 +59,8 @@ export default function FormularioInsumo({ aberto, usuario, onFechar, onCriar })
     if (!form.nomeInsumo.trim()) novosErros.nomeInsumo = "Informe o nome do insumo.";
     if (!form.unidadeMedida.trim()) novosErros.unidadeMedida = "Informe a unidade de medida.";
     if (!form.detalhes.trim()) novosErros.detalhes = "Descreva os detalhes do insumo.";
-    if (!form.aplicacao.trim()) novosErros.aplicacao = "Informe a aplicação.";
+    if (!form.aplicacao.trim()) novosErros.aplicacao = "Informe o centro de custo.";
+    if (!form.responsavelChamado) novosErros.responsavelChamado = "Selecione o responsável pelo chamado.";
     if (!form.solicitanteNome.trim()) novosErros.solicitanteNome = "Informe o nome do solicitante.";
     if (!form.solicitanteEmail.trim()) {
       novosErros.solicitanteEmail = "Informe o email do solicitante.";
@@ -85,6 +87,7 @@ export default function FormularioInsumo({ aberto, usuario, onFechar, onCriar })
         detalhes: form.detalhes.trim(),
         marca: form.marca.trim() || null,
         aplicacao: form.aplicacao.trim(),
+        responsavel_chamado: form.responsavelChamado,
         solicitante_nome: form.solicitanteNome.trim(),
         solicitante_email: form.solicitanteEmail.trim(),
         data_solicitacao: form.data,
@@ -218,8 +221,24 @@ export default function FormularioInsumo({ aberto, usuario, onFechar, onCriar })
                 />
               </Campo>
 
-              <Campo label="Aplicação" obrigatorio erro={erros.aplicacao}>
+              <Campo label="Centro de Custo" obrigatorio erro={erros.aplicacao}>
                 <input type="text" value={form.aplicacao} onChange={atualizar("aplicacao")} placeholder="Ex.: Obra" />
+              </Campo>
+
+              <span className={`tag-categoria-local ${form.tipoLocal}`}>
+                <Icon.Tag className="ic-pequeno" />
+                {form.tipoLocal === "escritorio" ? "Escritório/Stand" : "Obras"}
+              </span>
+
+              <Campo label="Responsável pelo chamado" obrigatorio erro={erros.responsavelChamado}>
+                <select value={form.responsavelChamado} onChange={atualizar("responsavelChamado")}>
+                  <option value="">Selecione…</option>
+                  {RESPONSAVEIS_CHAMADO.map((nome) => (
+                    <option key={nome} value={nome}>
+                      {nome}
+                    </option>
+                  ))}
+                </select>
               </Campo>
 
               <div className="campo-linha">

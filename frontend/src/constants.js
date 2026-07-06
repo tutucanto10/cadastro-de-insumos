@@ -15,6 +15,8 @@ export const COLUNAS = [
   { id: "cancelado", titulo: "Cancelado", cor: "#dc2626" },
 ];
 
+export const RESPONSAVEIS_CHAMADO = ["Lucas Queiroz", "Mário César Guedes"];
+
 export const FILTROS_LOCAL = [
   { id: "", titulo: "Todos os locais" },
   { id: "escritorio", titulo: "Escritório/Stand" },

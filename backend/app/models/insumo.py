@@ -32,6 +32,15 @@ class OrigemInsumo(str, enum.Enum):
     SHAREPOINT = "sharepoint"  # importado via polling da SharePoint List
 
 
+class ResponsavelChamado(str, enum.Enum):
+    """Escolhido na criação do chamado, pra controle interno. Independente
+    do `responsavel_nome`/`responsavel_email`, que continuam preenchidos
+    automaticamente por quem move o card pra 'Em Andamento'."""
+
+    LUCAS_QUEIROZ = "Lucas Queiroz"
+    MARIO_CESAR_GUEDES = "Mário César Guedes"
+
+
 def gerar_id():
     return f"INS-{uuid.uuid4().hex[:8].upper()}"
 
@@ -58,6 +67,10 @@ class Insumo(Base):
     # para "Em Andamento" (ver routers/insumos.py -> mudar_coluna).
     responsavel_nome = Column(String, nullable=True)
     responsavel_email = Column(String, nullable=True)
+
+    # Escolhido manualmente na criação do chamado (controle interno).
+    # Nulo pra itens importados da SharePoint List, que não têm esse campo.
+    responsavel_chamado = Column(SQLEnum(ResponsavelChamado), nullable=True)
 
     data_solicitacao = Column(String, nullable=False)  # formato ISO yyyy-mm-dd
 

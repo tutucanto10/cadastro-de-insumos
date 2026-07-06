@@ -7,7 +7,7 @@ from typing import Optional
 
 from pydantic import BaseModel, EmailStr, field_validator
 
-from app.models.insumo import TipoLocal, ColunaKanban, OrigemInsumo
+from app.models.insumo import TipoLocal, ColunaKanban, OrigemInsumo, ResponsavelChamado
 
 
 class InsumoCriar(BaseModel):
@@ -21,6 +21,7 @@ class InsumoCriar(BaseModel):
     solicitante_nome: str
     solicitante_email: EmailStr
     data_solicitacao: str
+    responsavel_chamado: ResponsavelChamado
 
     @field_validator("obra")
     @classmethod
@@ -56,6 +57,7 @@ class InsumoResposta(BaseModel):
     solicitante_email: str
     responsavel_nome: Optional[str]
     responsavel_email: Optional[str]
+    responsavel_chamado: Optional[ResponsavelChamado]
     data_solicitacao: str
     coluna: ColunaKanban
     origem: OrigemInsumo

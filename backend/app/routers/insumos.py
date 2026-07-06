@@ -71,6 +71,7 @@ def criar_insumo(
         solicitante_nome=dados.solicitante_nome,
         solicitante_email=dados.solicitante_email,
         data_solicitacao=dados.data_solicitacao,
+        responsavel_chamado=dados.responsavel_chamado,
     )
     db.add(novo)
     db.commit()

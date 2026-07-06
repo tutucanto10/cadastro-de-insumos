@@ -800,6 +800,7 @@ body { margin: 0; }
 .campo input[type="text"],
 .campo input[type="email"],
 .campo input[type="date"],
+.campo select,
 .campo textarea {
   font-family: inherit;
   font-size: 13.5px;
@@ -813,11 +814,35 @@ body { margin: 0; }
   width: 100%;
 }
 
-.campo input:focus, .campo textarea:focus {
+.campo input:focus, .campo select:focus, .campo textarea:focus {
   border-color: var(--azul-600);
 }
 
 .campo textarea { resize: vertical; min-height: 64px; }
+
+.tag-categoria-local {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin: -6px 0 16px;
+}
+
+.tag-categoria-local.escritorio {
+  background: var(--azul-50);
+  color: var(--azul-600);
+  border: 1px solid #bfdbfe;
+}
+
+.tag-categoria-local.obra {
+  background: var(--verde-50);
+  color: var(--verde-600);
+  border: 1px solid #a7f3d0;
+}
 
 .campo-erro {
   font-size: 11.5px;

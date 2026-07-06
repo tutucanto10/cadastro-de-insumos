@@ -42,9 +42,10 @@ export default function DetalheCard({ card, onFechar, onMudarColuna, onExcluir, 
             <DetalheItem icone={<Icon.Box className="ic-pequeno" />} rotulo="Unidade de Medida" valor={card.unidade_medida} />
             <DetalheItem icone={<Icon.Building className="ic-pequeno" />} rotulo="Obra(s)" valor={card.local_exibicao} />
             <DetalheItem icone={<Icon.Tag className="ic-pequeno" />} rotulo="Marca" valor={card.marca || "—"} />
-            <DetalheItem icone={<Icon.Tag className="ic-pequeno" />} rotulo="Aplicação" valor={card.aplicacao} />
+            <DetalheItem icone={<Icon.Tag className="ic-pequeno" />} rotulo="Centro de Custo" valor={card.aplicacao} />
             <DetalheItem icone={<Icon.User className="ic-pequeno" />} rotulo="Solicitante" valor={card.solicitante_nome} />
             <DetalheItem icone={<Icon.User className="ic-pequeno" />} rotulo="Responsável" valor={card.responsavel_nome || "Ainda não atribuído"} />
+            <DetalheItem icone={<Icon.User className="ic-pequeno" />} rotulo="Responsável pelo chamado" valor={card.responsavel_chamado || "—"} />
             <DetalheItem icone={<Icon.Calendar className="ic-pequeno" />} rotulo="Data" valor={formatarDataBR(card.data_solicitacao)} />
           </div>
 
