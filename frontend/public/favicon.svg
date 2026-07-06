@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <circle cx="256" cy="256" r="256" fill="#ffffff"/>
+
+  <!-- saco de cimento (amarelo) -->
+  <path d="M300 120 h90 c14 0 22 10 22 24 c0 70 -8 150 -30 210 c-8 22 -20 30 -36 30 h-42 c-16 0 -28 -8 -36 -30 c-22 -60 -30 -140 -30 -210 c0 -14 8 -24 22 -24 z" fill="#f4c11f" stroke="#0a0a0a" stroke-width="12" stroke-linejoin="round"/>
+  <path d="M296 122 c-4 -14 6 -26 20 -26 h48 c14 0 24 12 20 26" fill="#f4c11f" stroke="#0a0a0a" stroke-width="12" stroke-linejoin="round"/>
+  <line x1="298" y1="176" x2="404" y2="176" stroke="#0a0a0a" stroke-width="12" stroke-linecap="round"/>
+
+  <!-- caixa (marrom claro com etiqueta rosa) -->
+  <rect x="352" y="300" width="92" height="76" rx="6" fill="#eda766" stroke="#0a0a0a" stroke-width="12"/>
+  <rect x="386" y="300" width="26" height="20" rx="3" fill="#f4879a" stroke="#0a0a0a" stroke-width="8"/>
+
+  <!-- carrinho de mao -->
+  <g>
+    <!-- rodas -->
+    <circle cx="150" cy="368" r="26" fill="#7a7a86" stroke="#0a0a0a" stroke-width="12"/>
+    <circle cx="150" cy="368" r="8" fill="#0a0a0a"/>
+    <circle cx="230" cy="368" r="26" fill="#7a7a86" stroke="#0a0a0a" stroke-width="12"/>
+    <circle cx="230" cy="368" r="8" fill="#0a0a0a"/>
+
+    <!-- pedras -->
+    <ellipse cx="150" cy="230" rx="46" ry="34" fill="#8d8a94" stroke="#0a0a0a" stroke-width="10"/>
+    <ellipse cx="205" cy="238" rx="42" ry="32" fill="#b6b3bc" stroke="#0a0a0a" stroke-width="10"/>
+
+    <!-- caçamba -->
+    <path d="M64 232 h240 l-34 108 c-4 14 -14 22 -28 22 h-116 c-14 0 -24 -8 -28 -22 z" fill="#f6cba0" stroke="#0a0a0a" stroke-width="14" stroke-linejoin="round"/>
+    <path d="M110 232 l-30 108" fill="none" stroke="#0a0a0a" stroke-width="8"/>
+    <rect x="150" y="272" width="44" height="18" rx="3" fill="#0a0a0a"/>
+  </g>
+
+  <line x1="40" y1="400" x2="472" y2="400" stroke="#0a0a0a" stroke-width="14" stroke-linecap="round"/>
+</svg>

@@ -16,9 +16,10 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.core.config import CORS_ORIGINS, MOCK_MODE, POLLING_INTERVAL_SECONDS, RESEND_API_KEY
+from app.core.config import CORS_ORIGINS, MOCK_MODE, POLLING_INTERVAL_SECONDS
 from app.core.database import Base, SessionLocal, engine
 from app.routers import insumos, eventos_email, sincronizacao
+from app.services.email_service import CREDENCIAIS_CONFIGURADAS as EMAIL_CREDENCIAIS_OK
 from app.services.sharepoint_sync import sincronizar, CREDENCIAIS_CONFIGURADAS as SHAREPOINT_CREDENCIAIS_OK
 
 # Importa os modelos pra garantir que fiquem registrados no Base.metadata
@@ -80,8 +81,8 @@ def criar_tabelas():
     if MOCK_MODE:
         print("\n⚠️  MOCK_MODE ativo: login está simulado, sem chamar Azure AD de verdade.\n")
     print(
-        "📧 Email via Resend: "
-        + ("ENVIO REAL (RESEND_API_KEY configurado)\n" if RESEND_API_KEY else "SIMULADO (defina RESEND_API_KEY no .env para enviar de verdade)\n")
+        "📧 Email via Microsoft Graph: "
+        + ("ENVIO REAL (credenciais Azure/EMAIL_REMETENTE configurados)\n" if EMAIL_CREDENCIAIS_OK else "SIMULADO (defina AZURE_*/EMAIL_REMETENTE no .env para enviar de verdade)\n")
     )
     print(
         "🔄 Sincronização SharePoint: "

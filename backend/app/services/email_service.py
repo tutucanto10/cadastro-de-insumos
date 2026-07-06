@@ -1,31 +1,34 @@
 """
 Serviço de envio de email.
 
-Diferente de login (auth.py) e sincronização SharePoint (sharepoint_sync.py),
-o envio de email NÃO depende do MOCK_MODE geral — o Resend não tem nenhuma
-relação com Azure AD. Aqui quem decide entre simular ou enviar de verdade é
-só a presença de RESEND_API_KEY no .env:
+Assim como a sincronização SharePoint (sharepoint_sync.py), o envio de
+email usa o Microsoft Graph (Mail.Send, app-only) com o mesmo App
+Registration do Azure AD — não depende do login de usuário (MOCK_MODE) nem
+de nenhum provedor externo de email. Quem decide entre simular ou enviar de
+verdade é a presença das credenciais Azure + EMAIL_REMETENTE:
 
-- RESEND_API_KEY vazio (padrão): monta o conteúdo, imprime no console (pra
+- Credenciais ausentes (padrão): monta o conteúdo, imprime no console (pra
   você ver o que seria enviado) e grava um registro em EventoEmail com
   modo_simulado=True.
-- RESEND_API_KEY preenchido: envia de verdade via `_enviar_via_resend`.
-
-Isso permite ligar o Resend de verdade mantendo login e SharePoint mockados
-até a integração com Azure AD acontecer.
+- Credenciais presentes: envia de verdade via `_enviar_via_graph_mail`,
+  usando EMAIL_REMETENTE como caixa remetente (precisa ser uma caixa real
+  do Microsoft 365 — o Mail.Send de aplicação manda "como" esse usuário).
 """
 
 import logging
 
-import resend
+import requests
 from sqlalchemy.orm import Session
 
-from app.core.config import RESEND_API_KEY, RESEND_FROM_EMAIL
+from app.core.config import AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, EMAIL_REMETENTE
 from app.models.insumo import Insumo, ColunaKanban
 from app.models.evento_email import EventoEmail
+from app.services.graph_client import GRAPH_BASE, obter_token_graph
 
 logger = logging.getLogger("cadastro_insumos.email")
 logging.basicConfig(level=logging.INFO)
+
+CREDENCIAIS_CONFIGURADAS = bool(AZURE_TENANT_ID and AZURE_CLIENT_ID and AZURE_CLIENT_SECRET and EMAIL_REMETENTE)
 
 
 TITULOS_COLUNA = {
@@ -70,23 +73,27 @@ def _montar_conteudo(insumo: Insumo, coluna_nova: ColunaKanban) -> tuple[str, st
     return assunto, corpo
 
 
-def _enviar_via_resend(destinatario: str, assunto: str, corpo: str) -> None:
+def _enviar_via_graph_mail(destinatario: str, assunto: str, corpo: str) -> None:
     """
-    Envio real via Resend (https://resend.com/docs/api-reference/emails/send-email).
-
-    Requer RESEND_API_KEY configurado no .env e um remetente (RESEND_FROM_EMAIL)
-    de um domínio verificado na conta Resend — o domínio sandbox
-    `onboarding@resend.dev` só entrega para o email dono da conta.
+    Envio real via Microsoft Graph (POST /users/{remetente}/sendMail),
+    autenticado com o token de aplicação (client credentials). Requer a
+    permissão Mail.Send (Application) concedida no App Registration.
     """
-    resend.api_key = RESEND_API_KEY
-    resend.Emails.send(
-        {
-            "from": RESEND_FROM_EMAIL,
-            "to": [destinatario],
-            "subject": assunto,
-            "text": corpo,
-        }
+    token = obter_token_graph()
+    resp = requests.post(
+        f"{GRAPH_BASE}/users/{EMAIL_REMETENTE}/sendMail",
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+        json={
+            "message": {
+                "subject": assunto,
+                "body": {"contentType": "Text", "content": corpo},
+                "toRecipients": [{"emailAddress": {"address": destinatario}}],
+            },
+            "saveToSentItems": True,
+        },
+        timeout=15,
     )
+    resp.raise_for_status()
 
 
 def notificar_mudanca_coluna(
@@ -101,7 +108,7 @@ def notificar_mudanca_coluna(
     independentemente do resultado — sucesso ou falha ficam auditáveis.
     """
     assunto, corpo = _montar_conteudo(insumo, coluna_nova)
-    modo_simulado = not bool(RESEND_API_KEY)
+    modo_simulado = not CREDENCIAIS_CONFIGURADAS
 
     evento = EventoEmail(
         insumo_id=insumo.id,
@@ -124,7 +131,7 @@ def notificar_mudanca_coluna(
         evento.enviado_com_sucesso = True
     else:
         try:
-            _enviar_via_resend(insumo.solicitante_email, assunto, corpo)
+            _enviar_via_graph_mail(insumo.solicitante_email, assunto, corpo)
             evento.enviado_com_sucesso = True
         except Exception as exc:  # noqa: BLE001 — queremos capturar qualquer falha de envio
             logger.exception("Falha ao enviar email para %s", insumo.solicitante_email)

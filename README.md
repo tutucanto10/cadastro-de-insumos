@@ -16,7 +16,7 @@ via polling da Microsoft Graph API.
 | Banco (prod) | PostgreSQL |
 | Frontend | React + Vite |
 | Auth | Azure AD / MSAL (mockado — login de usuário ainda não implementado) |
-| Email | Resend (real se `RESEND_API_KEY` estiver preenchido, senão simulado) |
+| Email | Microsoft Graph / Outlook (real se `EMAIL_REMETENTE` estiver preenchido, senão simulado) |
 | SharePoint sync | Microsoft Graph API real (client credentials, independente do login) |
 
 ---
@@ -87,7 +87,7 @@ cadastro-insumos/
 │   │   │   ├── eventos_email.py# Consulta ao histórico de emails
 │   │   │   └── sincronizacao.py# Disparo manual do polling SharePoint
 │   │   ├── services/
-│   │   │   ├── email_service.py        # Envio via Resend (ou mock)
+│   │   │   ├── email_service.py        # Envio via Microsoft Graph (ou mock)
 │   │   │   └── sharepoint_sync.py      # Polling da SharePoint List
 │   │   └── main.py             # Entrypoint FastAPI
 │   ├── requirements.txt
@@ -210,25 +210,30 @@ comportamento.
 
 ---
 
-## Configurar o Resend (envio de email)
+## Configurar o email (Microsoft Graph / Outlook)
 
-O envio de email nas mudanças de coluna usa o [Resend](https://resend.com) e
-**não depende do Azure AD nem do `MOCK_MODE`** — dá pra ligar isso de verdade
-mesmo com login e SharePoint ainda mockados.
+O envio de email nas mudanças de coluna usa o mesmo App Registration do
+Azure AD já usado pela sincronização SharePoint (`Mail.Send`, Application),
+mandando via uma caixa real do Microsoft 365 — não usa nenhum provedor
+externo (evita ter que verificar domínio em serviços tipo Resend/SendGrid).
 
-1. Cria uma conta em resend.com e gera uma API key em **API Keys**
-2. Pra produção, verifica um domínio próprio em **Domains** (o remetente
-   sandbox `onboarding@resend.dev` só entrega para o email dono da conta)
-3. Preenche no `.env` do backend:
+1. No mesmo App Registration usado pro SharePoint (portal.azure.com →
+   Microsoft Entra ID → App registrations → seu app), vai em
+   **"Permissões de APIs"** → **"+ Adicionar uma permissão"** → **Microsoft
+   Graph** → **Application permissions** → busca `Mail.Send` → adiciona
+2. Clica em **"Conceder consentimento do administrador"**
+3. Preenche no `.env` do backend a caixa remetente (precisa ser uma caixa
+   real do tenant — o Mail.Send de aplicação manda "como" esse usuário):
 
 ```env
-RESEND_API_KEY=<sua-api-key>
-RESEND_FROM_EMAIL=notificacoes@seu-dominio.com.br
+EMAIL_REMETENTE=planejamento@dommainc.com.br
 ```
 
-A função `_enviar_via_resend()` em `backend/app/services/email_service.py`
-já está pronta — basta preencher `RESEND_API_KEY` que os emails passam a
-sair de verdade. Deixando vazio, continua simulado (só loga no console).
+A função `_enviar_via_graph_mail()` em `backend/app/services/email_service.py`
+já está pronta — basta ter as credenciais `AZURE_*` (as mesmas do
+SharePoint) e `EMAIL_REMETENTE` preenchidas que os emails passam a sair de
+verdade. Deixando `EMAIL_REMETENTE` vazio, continua simulado (só loga no
+console).
 
 ---
 

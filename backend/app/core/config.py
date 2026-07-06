@@ -29,16 +29,19 @@ if DATABASE_URL.startswith("postgresql://"):
     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
 
 # --- Azure AD / Microsoft Graph ---
-# Usadas pela sincronização da SharePoint List (app-only, client credentials
-# — ver services/sharepoint_sync.py). O login de usuário (MSAL) continua
-# mockado independente disso, controlado só pelo MOCK_MODE abaixo.
+# Usadas pela sincronização da SharePoint List e pelo envio de email
+# (Mail.Send), ambos app-only via client credentials — ver
+# services/sharepoint_sync.py e services/email_service.py. O login de
+# usuário (MSAL) continua mockado independente disso, controlado só pelo
+# MOCK_MODE abaixo.
 AZURE_TENANT_ID = os.getenv("AZURE_TENANT_ID", "")
 AZURE_CLIENT_ID = os.getenv("AZURE_CLIENT_ID", "")
 AZURE_CLIENT_SECRET = os.getenv("AZURE_CLIENT_SECRET", "")
 
-# --- Resend (envio de email nas mudanças de coluna) ---
-RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
-RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "onboarding@resend.dev")
+# Caixa de email (Microsoft 365) usada como remetente das notificações —
+# precisa ser uma caixa real do tenant, já que o Mail.Send de aplicação
+# manda "como" esse usuário.
+EMAIL_REMETENTE = os.getenv("EMAIL_REMETENTE", "")
 
 # IDs da SharePoint List "Cadastro de Insumos"
 SHAREPOINT_SITE_ID = os.getenv("SHAREPOINT_SITE_ID", "")

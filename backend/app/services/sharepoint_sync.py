@@ -41,10 +41,9 @@ from app.core.config import (
     SHAREPOINT_SYNC_DESDE,
 )
 from app.models.insumo import Insumo, TipoLocal, ColunaKanban, OrigemInsumo
+from app.services.graph_client import GRAPH_BASE, obter_token_graph
 
 logger = logging.getLogger("cadastro_insumos.sharepoint_sync")
-
-GRAPH_BASE = "https://graph.microsoft.com/v1.0"
 
 CREDENCIAIS_CONFIGURADAS = bool(
     AZURE_TENANT_ID and AZURE_CLIENT_ID and AZURE_CLIENT_SECRET and SHAREPOINT_SITE_ID and SHAREPOINT_LIST_ID
@@ -85,22 +84,6 @@ def _itens_simulados_sharepoint() -> list[dict]:
             "coluna": ColunaKanban.A_FAZER,
         },
     ]
-
-
-def _obter_token_graph() -> str:
-    """Autentica via client credentials (app-only, sem usuário) no Azure AD."""
-    resp = requests.post(
-        f"https://login.microsoftonline.com/{AZURE_TENANT_ID}/oauth2/v2.0/token",
-        data={
-            "client_id": AZURE_CLIENT_ID,
-            "client_secret": AZURE_CLIENT_SECRET,
-            "scope": "https://graph.microsoft.com/.default",
-            "grant_type": "client_credentials",
-        },
-        timeout=15,
-    )
-    resp.raise_for_status()
-    return resp.json()["access_token"]
 
 
 def _mapear_item(item: dict) -> dict | None:
@@ -144,7 +127,7 @@ def _buscar_itens_via_graph_api() -> list[dict]:
     todos os resultados. Filtra por data de criação (SHAREPOINT_SYNC_DESDE)
     quando configurado, pra não trazer o histórico inteiro da lista.
     """
-    token = _obter_token_graph()
+    token = obter_token_graph()
     headers = {
         "Authorization": f"Bearer {token}",
         # Necessário pro Graph aceitar $filter em campos não indexados (Created).
