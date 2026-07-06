@@ -1,0 +1,18 @@
+name: Sincronizar SharePoint List
+
+on:
+  schedule:
+    # A cada 10 minutos. O GitHub não garante precisão exata do horário
+    # (pode atrasar alguns minutos em picos de uso), mas roda sozinho.
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {} # permite rodar manualmente pela aba "Actions" no GitHub
+
+jobs:
+  sincronizar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Chamar endpoint de sincronização
+        run: |
+          curl -sf -X POST "https://cadastro-insumos.vercel.app/api/sincronizacao/sharepoint" \
+            -H "X-User-Name: GitHub Actions" \
+            -H "X-User-Email: automacao@dommainc.com.br"

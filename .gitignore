@@ -1,0 +1,12 @@
+.vercel
+.env*
+!.env.example
+.claude/
+
+node_modules
+frontend/dist
+
+__pycache__/
+*.pyc
+backend/cadastro_insumos.db
+backend/app/cadastro_insumos.db
