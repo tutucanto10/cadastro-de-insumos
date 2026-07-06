@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Icon } from "./Icon.jsx";
-import { OBRAS, RESPONSAVEIS_CHAMADO, hojeISO } from "../constants.js";
+import { OBRAS, CENTROS_CUSTO, RESPONSAVEIS_CHAMADO, hojeISO } from "../constants.js";
 
 const ETAPA = { LOCAL_TIPO: "local-tipo", LOCAL_OBRA: "local-obra", DETALHES: "detalhes" };
 
@@ -222,7 +222,14 @@ export default function FormularioInsumo({ aberto, usuario, onFechar, onCriar })
               </Campo>
 
               <Campo label="Centro de Custo" obrigatorio erro={erros.aplicacao}>
-                <input type="text" value={form.aplicacao} onChange={atualizar("aplicacao")} placeholder="Ex.: Obra" />
+                <select value={form.aplicacao} onChange={atualizar("aplicacao")}>
+                  <option value="">Selecione…</option>
+                  {CENTROS_CUSTO.map((centro) => (
+                    <option key={centro} value={centro}>
+                      {centro}
+                    </option>
+                  ))}
+                </select>
               </Campo>
 
               <span className={`tag-categoria-local ${form.tipoLocal}`}>
