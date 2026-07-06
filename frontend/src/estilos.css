@@ -944,6 +944,23 @@ body { margin: 0; }
   font-style: italic;
 }
 
+.select-responsavel-chamado {
+  font-family: inherit;
+  font-size: 13.5px;
+  padding: 9px 11px;
+  border: 1.5px solid var(--tinta-200);
+  border-radius: var(--raio-sm);
+  outline: none;
+  color: var(--tinta-900);
+  background: var(--branco);
+  transition: border-color 0.13s;
+  width: 100%;
+}
+
+.select-responsavel-chamado:focus {
+  border-color: var(--azul-600);
+}
+
 .select-status {
   display: flex;
   gap: 8px;

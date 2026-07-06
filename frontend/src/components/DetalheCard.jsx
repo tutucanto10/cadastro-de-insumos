@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Icon } from "./Icon.jsx";
-import { COLUNAS, formatarDataBR } from "../constants.js";
+import { COLUNAS, RESPONSAVEIS_CHAMADO, formatarDataBR } from "../constants.js";
 
-export default function DetalheCard({ card, onFechar, onMudarColuna, onExcluir, buscarEventosEmail }) {
+export default function DetalheCard({ card, onFechar, onMudarColuna, onMudarResponsavelChamado, onExcluir, buscarEventosEmail }) {
   const [eventos, setEventos] = useState([]);
   const [carregandoEventos, setCarregandoEventos] = useState(false);
 
@@ -44,8 +44,6 @@ export default function DetalheCard({ card, onFechar, onMudarColuna, onExcluir, 
             <DetalheItem icone={<Icon.Tag className="ic-pequeno" />} rotulo="Marca" valor={card.marca || "—"} />
             <DetalheItem icone={<Icon.Tag className="ic-pequeno" />} rotulo="Centro de Custo" valor={card.aplicacao} />
             <DetalheItem icone={<Icon.User className="ic-pequeno" />} rotulo="Solicitante" valor={card.solicitante_nome} />
-            <DetalheItem icone={<Icon.User className="ic-pequeno" />} rotulo="Responsável" valor={card.responsavel_nome || "Ainda não atribuído"} />
-            <DetalheItem icone={<Icon.User className="ic-pequeno" />} rotulo="Responsável pelo chamado" valor={card.responsavel_chamado || "—"} />
             <DetalheItem icone={<Icon.Calendar className="ic-pequeno" />} rotulo="Data" valor={formatarDataBR(card.data_solicitacao)} />
           </div>
 
@@ -57,6 +55,24 @@ export default function DetalheCard({ card, onFechar, onMudarColuna, onExcluir, 
           <div className="detalhe-bloco">
             <span className="detalhe-rotulo">Detalhes</span>
             <p className="detalhe-texto">{card.detalhes}</p>
+          </div>
+
+          <div className="detalhe-bloco">
+            <span className="detalhe-rotulo">Responsável pelo chamado</span>
+            <select
+              className="select-responsavel-chamado"
+              value={card.responsavel_chamado || ""}
+              onChange={(e) => onMudarResponsavelChamado(card.id, e.target.value)}
+            >
+              <option value="" disabled>
+                Selecione…
+              </option>
+              {RESPONSAVEIS_CHAMADO.map((nome) => (
+                <option key={nome} value={nome}>
+                  {nome}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="detalhe-bloco">

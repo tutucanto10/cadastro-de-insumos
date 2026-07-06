@@ -57,6 +57,12 @@ export const api = {
       body: JSON.stringify({ coluna }),
     }),
 
+  mudarResponsavelChamado: (id, responsavelChamado) =>
+    chamarApi(`/api/insumos/${id}/responsavel-chamado`, {
+      method: "PATCH",
+      body: JSON.stringify({ responsavel_chamado: responsavelChamado }),
+    }),
+
   excluirInsumo: (id) =>
     chamarApi(`/api/insumos/${id}`, { method: "DELETE" }),
 

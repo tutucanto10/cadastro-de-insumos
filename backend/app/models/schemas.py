@@ -43,6 +43,10 @@ class InsumoMudarColuna(BaseModel):
     coluna: ColunaKanban
 
 
+class InsumoMudarResponsavelChamado(BaseModel):
+    responsavel_chamado: ResponsavelChamado
+
+
 class InsumoResposta(BaseModel):
     id: str
     nome_insumo: str
