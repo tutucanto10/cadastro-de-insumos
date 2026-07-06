@@ -93,8 +93,15 @@ def _mapear_item(item: dict) -> dict | None:
     situacao = fields.get("Situa_x00e7__x00e3_o")
     coluna = SITUACAO_PARA_COLUNA.get(situacao)
     if coluna is None:
-        logger.warning("Item %s com Situação desconhecida (%r) — ignorado.", item.get("id"), situacao)
-        return None
+        # Itens criados direto pelo app "Lists" (não pelo Forms) ficam sem
+        # Situação preenchida — trata como recém-criado (A Fazer) em vez de
+        # descartar o item.
+        logger.warning(
+            "Item %s com Situação desconhecida (%r) — tratando como 'A Fazer'.",
+            item.get("id"),
+            situacao,
+        )
+        coluna = ColunaKanban.A_FAZER
 
     obras = fields.get("Obra_x0028_s_x0029_") or []
     obra_bruta = obras[0] if obras else None
