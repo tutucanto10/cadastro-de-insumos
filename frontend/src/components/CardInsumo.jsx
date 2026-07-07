@@ -27,10 +27,10 @@ export default function CardInsumo({ card, onAbrir, onArrastarInicio }) {
         </span>
         <span className="card-data">{formatarDataBR(card.data_solicitacao)}</span>
       </div>
-      {card.responsavel_nome && (
+      {card.responsavel_chamado && (
         <div className="card-responsavel">
-          <span className="avatar-mini">{card.responsavel_nome.charAt(0).toUpperCase()}</span>
-          Responsável: {card.responsavel_nome}
+          <span className="avatar-mini">{card.responsavel_chamado.charAt(0).toUpperCase()}</span>
+          Responsável: {card.responsavel_chamado}
         </div>
       )}
       {card.origem === "sharepoint" && (
