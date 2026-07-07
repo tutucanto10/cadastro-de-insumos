@@ -15,11 +15,12 @@ class ErroApi extends Error {
 }
 
 async function chamarApi(caminho, opcoes = {}) {
+  const headersAuth = await headersAutenticacao();
   const resposta = await fetch(`${API_BASE}${caminho}`, {
     ...opcoes,
     headers: {
       "Content-Type": "application/json",
-      ...headersAutenticacao(),
+      ...headersAuth,
       ...opcoes.headers,
     },
   });

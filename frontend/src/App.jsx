@@ -11,26 +11,33 @@ import { api, ErroApi } from "./services/api.js";
 import "./estilos.css";
 
 export default function App() {
-  const [usuario, setUsuario] = useState(() => obterUsuarioLogado());
+  const [usuario, setUsuario] = useState(null);
+  const [verificandoSessao, setVerificandoSessao] = useState(true);
+
+  useEffect(() => {
+    obterUsuarioLogado()
+      .then(setUsuario)
+      .finally(() => setVerificandoSessao(false));
+  }, []);
+
+  if (verificandoSessao) {
+    return (
+      <div className="tela-login">
+        <p className="login-subtitulo">Verificando sessão…</p>
+      </div>
+    );
+  }
 
   if (!usuario) {
-    return (
-      <TelaLogin
-        onEntrar={(dados) => {
-          const u = login(dados);
-          setUsuario(u);
-        }}
-      />
-    );
+    // login() redireciona a página inteira pra Microsoft — não retorna
+    // nada aqui, a aba navega pra fora antes disso.
+    return <TelaLogin onEntrar={login} />;
   }
 
   return (
     <QuadroPrincipal
       usuario={usuario}
-      onSair={() => {
-        logout();
-        setUsuario(null);
-      }}
+      onSair={logout}
     />
   );
 }

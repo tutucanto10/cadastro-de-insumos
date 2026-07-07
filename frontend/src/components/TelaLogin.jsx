@@ -1,21 +1,19 @@
 import React, { useState } from "react";
 
 export default function TelaLogin({ onEntrar }) {
-  const [nome, setNome] = useState("");
-  const [email, setEmail] = useState("");
+  const [entrando, setEntrando] = useState(false);
   const [erro, setErro] = useState("");
 
-  const submeter = (e) => {
-    e.preventDefault();
-    if (!nome.trim() || !email.trim()) {
-      setErro("Preencha nome e email pra continuar.");
-      return;
+  const entrar = async () => {
+    setEntrando(true);
+    setErro("");
+    try {
+      await onEntrar();
+    } catch (err) {
+      setErro(err?.message || "Não foi possível entrar. Tente novamente.");
+    } finally {
+      setEntrando(false);
     }
-    if (!email.includes("@")) {
-      setErro("Informe um email válido.");
-      return;
-    }
-    onEntrar({ nome, email });
   };
 
   return (
@@ -35,38 +33,11 @@ export default function TelaLogin({ onEntrar }) {
           Entre com sua conta Microsoft 365 da DOMMA
         </p>
 
-        <div className="aviso-mock">
-          Login simulado — a integração real com Azure AD ainda será conectada.
-        </div>
+        {erro && <span className="campo-erro">{erro}</span>}
 
-        <form onSubmit={submeter} className="login-form">
-          <label className="campo">
-            <span className="campo-label">Nome</span>
-            <input
-              type="text"
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              placeholder="Seu nome completo"
-              autoFocus
-            />
-          </label>
-
-          <label className="campo">
-            <span className="campo-label">Email corporativo</span>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="voce@dommainc.com.br"
-            />
-          </label>
-
-          {erro && <span className="campo-erro">{erro}</span>}
-
-          <button type="submit" className="btn-primario btn-login">
-            Entrar
-          </button>
-        </form>
+        <button type="button" className="btn-primario btn-login" onClick={entrar} disabled={entrando}>
+          {entrando ? "Entrando…" : "Entrar com Microsoft"}
+        </button>
       </div>
     </div>
   );

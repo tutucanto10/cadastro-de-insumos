@@ -6,3 +6,4 @@ python-multipart==0.0.12
 python-dotenv==1.2.2
 psycopg[binary]==3.3.4
 requests==2.34.2
+pyjwt[crypto]==2.13.0

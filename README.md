@@ -15,7 +15,7 @@ via polling da Microsoft Graph API.
 | Banco (dev) | SQLite |
 | Banco (prod) | PostgreSQL |
 | Frontend | React + Vite |
-| Auth | Azure AD / MSAL (mockado — login de usuário ainda não implementado) |
+| Auth | Azure AD / MSAL (real se `MOCK_MODE=false` + `VITE_AZURE_*`, senão mockado) |
 | Email | Microsoft Graph / Outlook (real se `EMAIL_REMETENTE` estiver preenchido, senão simulado) |
 | SharePoint sync | Microsoft Graph API real (client credentials, independente do login) |
 
@@ -63,7 +63,9 @@ npm run dev
 
 Abre em: http://localhost:5173
 
-Na tela de login simulado, entre com qualquer nome e email `@dommainc.com.br`.
+Login real via Microsoft (MSAL) — precisa das variáveis `VITE_AZURE_*` no
+`.env` do frontend (ver seção de integração Azure AD abaixo). Sem elas
+configuradas, o botão de login não funciona.
 
 ---
 
@@ -76,7 +78,7 @@ cadastro-insumos/
 │   │   ├── core/
 │   │   │   ├── config.py       # Variáveis de ambiente e settings
 │   │   │   ├── database.py     # Engine SQLAlchemy + sessão
-│   │   │   └── auth.py         # Auth mockada (placeholder pro MSAL)
+│   │   │   └── auth.py         # Valida token Azure AD (JWT) — ou mock, se MOCK_MODE=true
 │   │   ├── models/
 │   │   │   ├── insumo.py       # Modelo SQLAlchemy: card do Kanban
 │   │   │   ├── evento_email.py # Modelo: histórico de emails disparados
@@ -96,7 +98,7 @@ cadastro-insumos/
 └── frontend/
     ├── src/
     │   ├── components/
-    │   │   ├── TelaLogin.jsx       # Login simulado (placeholder MSAL)
+    │   │   ├── TelaLogin.jsx       # Botão de login (MSAL)
     │   │   ├── FormularioInsumo.jsx# Form 3-etapas com email pré-preenchido
     │   │   ├── CardInsumo.jsx      # Card do Kanban
     │   │   ├── DetalheCard.jsx     # Painel lateral com histórico de emails
@@ -104,7 +106,7 @@ cadastro-insumos/
     │   │   └── Icon.jsx            # Ícones SVG inline
     │   ├── services/
     │   │   ├── api.js              # Cliente REST do backend
-    │   │   └── auth.js             # Sessão mockada (placeholder MSAL)
+    │   │   └── auth.js             # Login real via MSAL (redirect)
     │   ├── constants.js            # OBRAS, COLUNAS, FILTROS_LOCAL
     │   ├── estilos.css
     │   ├── App.jsx
@@ -129,31 +131,53 @@ cadastro-insumos/
 
 ---
 
-## Próximos passos (integração Azure AD)
+## Integração Azure AD (login, SharePoint e email)
 
-### 1. App Registration no Azure AD
+Um único App Registration no Azure AD ("Cadastro de insumos") cobre as três
+integrações — cada uma usa uma permissão diferente, mas compartilham
+Tenant ID e Client ID:
 
-1. Acessa portal.azure.com → Microsoft Entra ID → App registrations → New registration
-2. Nome: `Cadastro de Insumos`
-3. Redirect URI: `http://localhost:5173` (dev) / URL de produção depois
-4. Em **API permissions**, adiciona:
-   - `Sites.Read.All` (Application) — leitura da SharePoint List
-   - `User.Read` (Delegated) — login do usuário
-5. Gera um **Client Secret** em Certificates & secrets
-6. Copia **Tenant ID**, **Client ID** e o **Client Secret** para o `.env`
+| Integração | Permissão | Tipo | Depende de login de usuário? |
+|---|---|---|---|
+| Login (MSAL) | `User.Read` | Delegated | — |
+| Sincronização SharePoint | `Sites.Read.All` | Application | Não (client credentials) |
+| Email (Outlook) | `Mail.Send` | Application | Não (client credentials) |
 
-### 2. Preencher o `.env` do backend
+### Configurar o App Registration
+
+1. portal.azure.com → Microsoft Entra ID → App registrations → New registration
+2. Em **Authentication**, adiciona uma plataforma **"Single-page application"**
+   com as Redirect URIs: `http://localhost:5173`, `https://seu-dominio-de-producao`
+   e as mesmas duas com `/blank.html` no final (usada pra processar o retorno
+   do login sem recarregar o app inteiro)
+3. Em **API permissions**, adiciona as três permissões da tabela acima e clica
+   em **"Conceder consentimento do administrador"**
+4. Gera um **Client Secret** em Certificates & secrets (usado por
+   SharePoint/email, não pelo login)
+
+### Preencher o `.env` do backend
 
 ```env
 MOCK_MODE=false
-AZURE_TENANT_ID=<seu-tenant-id>
-AZURE_CLIENT_ID=<client-id-do-app>
+AZURE_TENANT_ID=<tenant-id>
+AZURE_CLIENT_ID=<client-id>
 AZURE_CLIENT_SECRET=<client-secret>
 ```
 
-### 3. Descobrir os IDs do SharePoint
+`MOCK_MODE=false` ativa a validação real do token Azure AD no login — sem
+isso, o backend continua aceitando os headers mock (`X-User-Name`/`X-User-Email`).
 
-Com as credenciais configuradas, rode no Postman ou curl:
+### Preencher o `.env` do frontend
+
+```env
+VITE_AZURE_CLIENT_ID=<client-id>
+VITE_AZURE_TENANT_ID=<tenant-id>
+```
+
+Client ID e Tenant ID não são segredo (ficam expostos no bundle do frontend
+de qualquer forma) — só o Client Secret fica só no backend.
+
+### Descobrir os IDs do SharePoint (site + list)
 
 ```bash
 # Site ID
@@ -163,24 +187,10 @@ GET https://graph.microsoft.com/v1.0/sites/dommainc.sharepoint.com:/sites/Engenh
 GET https://graph.microsoft.com/v1.0/sites/{site-id}/lists
 ```
 
-Adiciona ao `.env`:
-
 ```env
 SHAREPOINT_SITE_ID=<site-id>
 SHAREPOINT_LIST_ID=<list-id>
 ```
-
-### 4. Implementar as funções marcadas como `NotImplementedError`
-
-Isso é só sobre o **login de usuário** — a sincronização SharePoint (client
-credentials, app-only) já está implementada e funcionando de verdade em
-`backend/app/services/sharepoint_sync.py`, independente do login.
-
-- `backend/app/core/auth.py` → validação do token Bearer Azure AD
-- `frontend/src/services/auth.js` → trocar o login mock por `@azure/msal-browser`
-
-Cada função tem comentários detalhando exatamente o que implementar e a
-referência da documentação Microsoft relevante.
 
 ---
 
