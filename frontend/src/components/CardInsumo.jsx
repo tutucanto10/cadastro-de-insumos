@@ -1,5 +1,5 @@
 import React from "react";
-import { formatarDataBR } from "../constants.js";
+import { formatarDataBR, formatarHora } from "../constants.js";
 
 export default function CardInsumo({ card, onAbrir, onArrastarInicio }) {
   return (
@@ -25,7 +25,9 @@ export default function CardInsumo({ card, onAbrir, onArrastarInicio }) {
           <span className="avatar-mini">{card.solicitante_nome.charAt(0).toUpperCase()}</span>
           {card.solicitante_nome}
         </span>
-        <span className="card-data">{formatarDataBR(card.data_solicitacao)}</span>
+        <span className="card-data" title="Horário em que o chamado entrou no sistema">
+          {formatarDataBR(card.data_solicitacao)} · {formatarHora(card.criado_em)}
+        </span>
       </div>
       {card.responsavel_chamado && (
         <div className="card-responsavel">

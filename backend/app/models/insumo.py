@@ -72,6 +72,10 @@ class Insumo(Base):
     # Nulo pra itens importados da SharePoint List, que não têm esse campo.
     responsavel_chamado = Column(SQLEnum(ResponsavelChamado), nullable=True)
 
+    # Preenchido quando o card é movido pra "Cancelado" — entra no email
+    # de notificação (ver services/email_service.py).
+    motivo_cancelamento = Column(Text, nullable=True)
+
     data_solicitacao = Column(String, nullable=False)  # formato ISO yyyy-mm-dd
 
     coluna = Column(

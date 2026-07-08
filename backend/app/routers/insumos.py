@@ -108,6 +108,9 @@ def mudar_coluna(
         insumo.responsavel_nome = usuario.nome
         insumo.responsavel_email = usuario.email
 
+    if dados.coluna == ColunaKanban.CANCELADO:
+        insumo.motivo_cancelamento = dados.motivo_cancelamento
+
     db.commit()
     db.refresh(insumo)
 

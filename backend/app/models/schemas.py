@@ -5,7 +5,7 @@ Schemas Pydantic — validam o que entra na API e formatam o que sai.
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, field_validator, model_validator
 
 from app.models.insumo import TipoLocal, ColunaKanban, OrigemInsumo, ResponsavelChamado
 
@@ -41,6 +41,18 @@ class InsumoCriar(BaseModel):
 
 class InsumoMudarColuna(BaseModel):
     coluna: ColunaKanban
+    motivo_cancelamento: Optional[str] = None
+
+    # model_validator (não field_validator) porque field_validator não roda
+    # quando o campo fica no valor padrão (None) — e é exatamente esse o
+    # caso que precisamos barrar (cancelar sem mandar motivo nenhum).
+    @model_validator(mode="after")
+    def motivo_obrigatorio_se_cancelado(self):
+        if self.coluna == ColunaKanban.CANCELADO:
+            if not (self.motivo_cancelamento and self.motivo_cancelamento.strip()):
+                raise ValueError("Campo 'motivo_cancelamento' é obrigatório ao cancelar.")
+            self.motivo_cancelamento = self.motivo_cancelamento.strip()
+        return self
 
 
 class InsumoMudarResponsavelChamado(BaseModel):
@@ -62,6 +74,7 @@ class InsumoResposta(BaseModel):
     responsavel_nome: Optional[str]
     responsavel_email: Optional[str]
     responsavel_chamado: Optional[ResponsavelChamado]
+    motivo_cancelamento: Optional[str]
     data_solicitacao: str
     coluna: ColunaKanban
     origem: OrigemInsumo

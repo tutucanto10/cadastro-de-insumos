@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Icon } from "./Icon.jsx";
-import { COLUNAS, RESPONSAVEIS_CHAMADO, formatarDataBR } from "../constants.js";
+import { COLUNAS, RESPONSAVEIS_CHAMADO, formatarDataBR, formatarHora } from "../constants.js";
 
 export default function DetalheCard({ card, onFechar, onMudarColuna, onMudarResponsavelChamado, onExcluir, buscarEventosEmail }) {
   const [eventos, setEventos] = useState([]);
   const [carregandoEventos, setCarregandoEventos] = useState(false);
+  const [motivoAberto, setMotivoAberto] = useState(false);
+  const [motivoTexto, setMotivoTexto] = useState("");
+  const [motivoErro, setMotivoErro] = useState("");
 
   useEffect(() => {
     if (!card) return;
@@ -16,6 +19,25 @@ export default function DetalheCard({ card, onFechar, onMudarColuna, onMudarResp
   }, [card, buscarEventosEmail]);
 
   if (!card) return null;
+
+  const escolherColuna = (colunaId) => {
+    if (colunaId === "cancelado") {
+      setMotivoTexto("");
+      setMotivoErro("");
+      setMotivoAberto(true);
+      return;
+    }
+    onMudarColuna(card.id, colunaId);
+  };
+
+  const confirmarCancelamento = () => {
+    if (!motivoTexto.trim()) {
+      setMotivoErro("Descreve o motivo do cancelamento.");
+      return;
+    }
+    onMudarColuna(card.id, "cancelado", motivoTexto.trim());
+    setMotivoAberto(false);
+  };
 
   return (
     <div className="overlay" role="dialog" aria-modal="true" aria-label={`Detalhes de ${card.nome_insumo}`}>
@@ -45,7 +67,15 @@ export default function DetalheCard({ card, onFechar, onMudarColuna, onMudarResp
             <DetalheItem icone={<Icon.Tag className="ic-pequeno" />} rotulo="Centro de Custo" valor={card.aplicacao} />
             <DetalheItem icone={<Icon.User className="ic-pequeno" />} rotulo="Solicitante" valor={card.solicitante_nome} />
             <DetalheItem icone={<Icon.Calendar className="ic-pequeno" />} rotulo="Data" valor={formatarDataBR(card.data_solicitacao)} />
+            <DetalheItem icone={<Icon.Calendar className="ic-pequeno" />} rotulo="Hora de entrada" valor={formatarHora(card.criado_em)} />
           </div>
+
+          {card.coluna === "cancelado" && card.motivo_cancelamento && (
+            <div className="detalhe-bloco">
+              <span className="detalhe-rotulo">Motivo do cancelamento</span>
+              <p className="detalhe-texto">{card.motivo_cancelamento}</p>
+            </div>
+          )}
 
           <div className="detalhe-bloco">
             <span className="detalhe-rotulo">Email do solicitante</span>
@@ -84,7 +114,7 @@ export default function DetalheCard({ card, onFechar, onMudarColuna, onMudarResp
                   type="button"
                   className={`pill-status ${card.coluna === col.id ? "ativo" : ""}`}
                   style={card.coluna === col.id ? { "--cor": col.cor } : undefined}
-                  onClick={() => onMudarColuna(card.id, col.id)}
+                  onClick={() => escolherColuna(col.id)}
                 >
                   {col.titulo}
                 </button>
@@ -131,6 +161,33 @@ export default function DetalheCard({ card, onFechar, onMudarColuna, onMudarResp
           </button>
         </footer>
       </div>
+
+      {motivoAberto && (
+        <div className="overlay overlay-motivo" role="dialog" aria-modal="true" aria-label="Motivo do cancelamento">
+          <div className="overlay-backdrop" onClick={() => setMotivoAberto(false)} />
+          <div className="painel-motivo">
+            <h3>Motivo do cancelamento</h3>
+            <p className="login-subtitulo">Isso vai entrar no email enviado ao solicitante.</p>
+            <textarea
+              className="textarea-motivo"
+              rows={4}
+              autoFocus
+              value={motivoTexto}
+              onChange={(e) => setMotivoTexto(e.target.value)}
+              placeholder="Descreva o motivo…"
+            />
+            {motivoErro && <span className="campo-erro">{motivoErro}</span>}
+            <div className="painel-motivo-acoes">
+              <button type="button" className="btn-secundario" onClick={() => setMotivoAberto(false)}>
+                Voltar
+              </button>
+              <button type="button" className="btn-primario" onClick={confirmarCancelamento}>
+                Confirmar cancelamento
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

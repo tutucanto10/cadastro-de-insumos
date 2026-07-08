@@ -57,3 +57,12 @@ export const formatarDataBR = (iso) => {
   const [ano, mes, dia] = iso.split("-");
   return `${dia}/${mes}/${ano}`;
 };
+
+// Extrai HH:MM de um datetime ISO (ex.: criado_em) no horário local do navegador.
+export const formatarHora = (isoDatetime) => {
+  if (!isoDatetime) return "--";
+  return new Date(isoDatetime).toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};

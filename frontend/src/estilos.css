@@ -622,6 +622,53 @@ body { margin: 0; }
   .overlay-backdrop, .painel-form, .painel-detalhe { animation: none; }
 }
 
+.overlay-motivo {
+  justify-content: center;
+  align-items: center;
+}
+
+.painel-motivo {
+  position: relative;
+  width: 420px;
+  max-width: 92vw;
+  background: var(--branco);
+  border-radius: var(--raio-sm);
+  box-shadow: var(--sombra-painel);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: deslizar-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.painel-motivo h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.textarea-motivo {
+  font-family: inherit;
+  font-size: 13.5px;
+  padding: 9px 11px;
+  border: 1.5px solid var(--tinta-200);
+  border-radius: var(--raio-sm);
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+  width: 100%;
+}
+
+.textarea-motivo:focus {
+  border-color: var(--azul-600);
+}
+
+.painel-motivo-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
 .painel-form-header {
   display: flex;
   align-items: center;

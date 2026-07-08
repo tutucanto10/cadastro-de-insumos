@@ -60,13 +60,18 @@ def _montar_conteudo(insumo: Insumo, coluna_nova: ColunaKanban) -> tuple[str, st
 
     assunto = f"[Cadastro de Insumos] {insumo.nome_insumo} — {titulo_coluna}"
 
+    motivo_linha = ""
+    if coluna_nova == ColunaKanban.CANCELADO and insumo.motivo_cancelamento:
+        motivo_linha = f"Motivo do cancelamento: {insumo.motivo_cancelamento}\n"
+
     corpo = (
         f"Olá, {insumo.solicitante_nome}!\n\n"
         f"{mensagem}\n\n"
         f"Insumo: {insumo.nome_insumo}\n"
         f"ID: {insumo.id}\n"
         f"Local: {insumo.local_exibicao}\n"
-        f"Status atual: {titulo_coluna}\n\n"
+        f"Status atual: {titulo_coluna}\n"
+        f"{motivo_linha}\n"
         f"Este é um email automático do sistema Cadastro de Insumos."
     )
 
