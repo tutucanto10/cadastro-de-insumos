@@ -52,6 +52,11 @@ SHAREPOINT_LIST_ID = os.getenv("SHAREPOINT_LIST_ID", "")
 # quando a sincronização real for ligada pela primeira vez.
 SHAREPOINT_SYNC_DESDE = os.getenv("SHAREPOINT_SYNC_DESDE", "")
 
+# Chave usada pelo GitHub Actions (ou qualquer automação) pra chamar
+# POST /api/sincronizacao/sharepoint — não depende do login de usuário,
+# já que é uma chamada sistema-a-sistema (ver routers/sincronizacao.py).
+SYNC_API_KEY = os.getenv("SYNC_API_KEY", "")
+
 # --- Modo de simulação ---
 # Controla só o login (MSAL) por enquanto — email (Resend) e sincronização
 # SharePoint têm suas próprias condições, baseadas na presença das

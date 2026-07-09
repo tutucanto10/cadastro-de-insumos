@@ -12,7 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Chamar endpoint de sincronização
+        env:
+          SYNC_API_KEY: ${{ secrets.SYNC_API_KEY }}
         run: |
           curl -sf -X POST "https://cadastro-insumos.vercel.app/api/sincronizacao/sharepoint" \
-            -H "X-User-Name: GitHub Actions" \
-            -H "X-User-Email: automacao@dommainc.com.br"
+            -H "X-Sync-Key: $SYNC_API_KEY"

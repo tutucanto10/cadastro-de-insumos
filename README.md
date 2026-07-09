@@ -202,6 +202,13 @@ loop rodando sozinho em segundo plano — algo externo precisa chamar
 workflow do GitHub Actions em `.github/workflows/sync-sharepoint.yml`, que
 roda a cada ~10 minutos (o GitHub não garante precisão exata do horário).
 
+Esse endpoint **não usa o login de usuário** (MSAL) — é uma chamada
+sistema-a-sistema autenticada por uma chave própria (`X-Sync-Key`), guardada
+como secret do repositório no GitHub (`Settings → Secrets and variables →
+Actions`) e como variável de ambiente no backend. Isso é de propósito: se
+dependesse do login, qualquer mudança em `MOCK_MODE` quebraria a automação
+silenciosamente (foi exatamente isso que aconteceu antes dessa separação).
+
 Variáveis relevantes no `.env`/Vercel:
 
 ```env
@@ -211,12 +218,17 @@ AZURE_CLIENT_SECRET=...
 SHAREPOINT_SITE_ID=...
 SHAREPOINT_LIST_ID=...
 SHAREPOINT_SYNC_DESDE=2026-07-06T18:11:43Z
+SYNC_API_KEY=<gera uma string aleatória qualquer>
 ```
 
 `SHAREPOINT_SYNC_DESDE` é o corte: só itens criados na lista **depois**
 dessa data são importados. Isso evita trazer o histórico inteiro da lista
 na primeira sincronização real — ajuste (ou remova) se quiser mudar esse
 comportamento.
+
+`SYNC_API_KEY` tem que ser **o mesmo valor** no backend (Vercel) e no
+secret `SYNC_API_KEY` do repositório GitHub — é isso que o workflow manda
+no header `X-Sync-Key`.
 
 ---
 
