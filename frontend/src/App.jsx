@@ -113,6 +113,20 @@ function QuadroPrincipal({ usuario, onSair }) {
     }
   };
 
+  const mudarInsumoAtendente = async (id, insumoAtendente) => {
+    setCards((prev) => prev.map((c) => (c.id === id ? { ...c, insumo_atendente: insumoAtendente } : c)));
+    setCardSelecionado((sel) => (sel && sel.id === id ? { ...sel, insumo_atendente: insumoAtendente } : sel));
+
+    try {
+      const atualizado = await api.mudarInsumoAtendente(id, insumoAtendente);
+      setCards((prev) => prev.map((c) => (c.id === id ? atualizado : c)));
+      setCardSelecionado((sel) => (sel && sel.id === id ? atualizado : sel));
+    } catch (err) {
+      carregarCards();
+      alert(`Não foi possível atualizar o insumo: ${err.message}`);
+    }
+  };
+
   const excluirCard = async (id) => {
     try {
       await api.excluirInsumo(id);
@@ -243,6 +257,7 @@ function QuadroPrincipal({ usuario, onSair }) {
         onFechar={() => setCardSelecionado(null)}
         onMudarColuna={mudarColuna}
         onMudarResponsavelChamado={mudarResponsavelChamado}
+        onMudarInsumoAtendente={mudarInsumoAtendente}
         onExcluir={excluirCard}
         buscarEventosEmail={api.listarEventosEmail}
       />

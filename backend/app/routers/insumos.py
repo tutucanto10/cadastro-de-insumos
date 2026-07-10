@@ -10,7 +10,13 @@ from sqlalchemy.orm import Session
 from app.core.auth import obter_usuario_atual, UsuarioAtual
 from app.core.database import get_db
 from app.models.insumo import Insumo, TipoLocal, ColunaKanban
-from app.models.schemas import InsumoCriar, InsumoMudarColuna, InsumoMudarResponsavelChamado, InsumoResposta
+from app.models.schemas import (
+    InsumoCriar,
+    InsumoMudarColuna,
+    InsumoMudarResponsavelChamado,
+    InsumoMudarInsumoAtendente,
+    InsumoResposta,
+)
 from app.services.email_service import notificar_mudanca_coluna
 
 router = APIRouter(prefix="/api/insumos", tags=["insumos"])
@@ -135,6 +141,27 @@ def mudar_responsavel_chamado(
         raise HTTPException(status_code=404, detail="Insumo não encontrado.")
 
     insumo.responsavel_chamado = dados.responsavel_chamado
+    db.commit()
+    db.refresh(insumo)
+    return insumo
+
+
+@router.patch("/{insumo_id}/insumo-atendente", response_model=InsumoResposta)
+def mudar_insumo_atendente(
+    insumo_id: str,
+    dados: InsumoMudarInsumoAtendente,
+    db: Session = Depends(get_db),
+    _usuario: UsuarioAtual = Depends(obter_usuario_atual),
+):
+    """
+    Campo "Insumo" preenchido pelo atendimento — editável a qualquer
+    momento, entra no email de notificação quando presente.
+    """
+    insumo = db.query(Insumo).filter(Insumo.id == insumo_id).first()
+    if not insumo:
+        raise HTTPException(status_code=404, detail="Insumo não encontrado.")
+
+    insumo.insumo_atendente = dados.insumo_atendente
     db.commit()
     db.refresh(insumo)
     return insumo

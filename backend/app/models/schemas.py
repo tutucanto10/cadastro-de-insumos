@@ -59,6 +59,17 @@ class InsumoMudarResponsavelChamado(BaseModel):
     responsavel_chamado: ResponsavelChamado
 
 
+class InsumoMudarInsumoAtendente(BaseModel):
+    insumo_atendente: str
+
+    @field_validator("insumo_atendente")
+    @classmethod
+    def nao_vazio(cls, v):
+        if not v or not v.strip():
+            raise ValueError("Campo não pode ser vazio.")
+        return v.strip()
+
+
 class InsumoResposta(BaseModel):
     id: str
     nome_insumo: str
@@ -75,6 +86,7 @@ class InsumoResposta(BaseModel):
     responsavel_email: Optional[str]
     responsavel_chamado: Optional[ResponsavelChamado]
     motivo_cancelamento: Optional[str]
+    insumo_atendente: Optional[str]
     data_solicitacao: str
     coluna: ColunaKanban
     origem: OrigemInsumo

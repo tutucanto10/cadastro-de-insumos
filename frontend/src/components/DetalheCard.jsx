@@ -2,12 +2,21 @@ import React, { useEffect, useState } from "react";
 import { Icon } from "./Icon.jsx";
 import { COLUNAS, RESPONSAVEIS_CHAMADO, formatarDataBR, formatarHora } from "../constants.js";
 
-export default function DetalheCard({ card, onFechar, onMudarColuna, onMudarResponsavelChamado, onExcluir, buscarEventosEmail }) {
+export default function DetalheCard({
+  card,
+  onFechar,
+  onMudarColuna,
+  onMudarResponsavelChamado,
+  onMudarInsumoAtendente,
+  onExcluir,
+  buscarEventosEmail,
+}) {
   const [eventos, setEventos] = useState([]);
   const [carregandoEventos, setCarregandoEventos] = useState(false);
   const [motivoAberto, setMotivoAberto] = useState(false);
   const [motivoTexto, setMotivoTexto] = useState("");
   const [motivoErro, setMotivoErro] = useState("");
+  const [insumoAtendenteTexto, setInsumoAtendenteTexto] = useState("");
 
   useEffect(() => {
     if (!card) return;
@@ -18,7 +27,18 @@ export default function DetalheCard({ card, onFechar, onMudarColuna, onMudarResp
       .finally(() => setCarregandoEventos(false));
   }, [card, buscarEventosEmail]);
 
+  useEffect(() => {
+    setInsumoAtendenteTexto(card?.insumo_atendente || "");
+  }, [card?.id]);
+
   if (!card) return null;
+
+  const salvarInsumoAtendente = () => {
+    const texto = insumoAtendenteTexto.trim();
+    if (texto !== (card.insumo_atendente || "")) {
+      onMudarInsumoAtendente(card.id, texto);
+    }
+  };
 
   const escolherColuna = (colunaId) => {
     if (colunaId === "cancelado") {
@@ -85,6 +105,21 @@ export default function DetalheCard({ card, onFechar, onMudarColuna, onMudarResp
           <div className="detalhe-bloco">
             <span className="detalhe-rotulo">Detalhes</span>
             <p className="detalhe-texto">{card.detalhes}</p>
+          </div>
+
+          <div className="detalhe-bloco">
+            <span className="detalhe-rotulo">Insumo</span>
+            <input
+              type="text"
+              className="input-insumo-atendente"
+              value={insumoAtendenteTexto}
+              onChange={(e) => setInsumoAtendenteTexto(e.target.value)}
+              onBlur={salvarInsumoAtendente}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") e.currentTarget.blur();
+              }}
+              placeholder="Preenchido pelo atendimento"
+            />
           </div>
 
           <div className="detalhe-bloco">

@@ -76,6 +76,10 @@ class Insumo(Base):
     # de notificação (ver services/email_service.py).
     motivo_cancelamento = Column(Text, nullable=True)
 
+    # Preenchido pelo atendimento a qualquer momento (não na criação) —
+    # entra no email de notificação quando presente, ver email_service.py.
+    insumo_atendente = Column(String, nullable=True)
+
     data_solicitacao = Column(String, nullable=False)  # formato ISO yyyy-mm-dd
 
     coluna = Column(
