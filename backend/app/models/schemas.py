@@ -90,6 +90,8 @@ class InsumoResposta(BaseModel):
     data_solicitacao: str
     coluna: ColunaKanban
     origem: OrigemInsumo
+    tem_anexo: bool
+    link_sharepoint: Optional[str]
     criado_em: datetime
     atualizado_em: datetime
 

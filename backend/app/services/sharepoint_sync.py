@@ -82,6 +82,8 @@ def _itens_simulados_sharepoint() -> list[dict]:
             "solicitante_email": "wagner.valentim@dommainc.com.br",
             "data_solicitacao": ontem,
             "coluna": ColunaKanban.A_FAZER,
+            "tem_anexo": False,
+            "link_sharepoint": None,
         },
     ]
 
@@ -125,6 +127,8 @@ def _mapear_item(item: dict) -> dict | None:
         "solicitante_email": criado_por.get("email") or "",
         "data_solicitacao": data_solicitacao,
         "coluna": coluna,
+        "tem_anexo": bool(fields.get("Attachments")),
+        "link_sharepoint": item.get("webUrl"),
     }
 
 
@@ -215,6 +219,8 @@ def sincronizar(db: Session) -> dict:
             coluna=item["coluna"],
             origem=OrigemInsumo.SHAREPOINT,
             sharepoint_item_id=item["sharepoint_item_id"],
+            tem_anexo=item.get("tem_anexo", False),
+            link_sharepoint=item.get("link_sharepoint"),
         )
         db.add(novo)
         importados += 1

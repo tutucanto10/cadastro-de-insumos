@@ -6,6 +6,17 @@ export const Icon = {
       <path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
     </svg>
   ),
+  Paperclip: (p) => (
+    <svg viewBox="0 0 20 20" fill="none" {...p}>
+      <path
+        d="M13.5 6.5l-6 6a2.5 2.5 0 003.54 3.54l6-6a4 4 0 00-5.66-5.66l-6 6a5.5 5.5 0 007.78 7.78"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  ),
   Close: (p) => (
     <svg viewBox="0 0 20 20" fill="none" {...p}>
       <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />

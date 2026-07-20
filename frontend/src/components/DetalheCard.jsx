@@ -80,6 +80,18 @@ export default function DetalheCard({
             )}
           </div>
 
+          {card.tem_anexo && card.link_sharepoint && (
+            <a
+              className="link-anexo-sharepoint"
+              href={card.link_sharepoint}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Icon.Paperclip className="ic-pequeno" />
+              Ver anexo no SharePoint
+            </a>
+          )}
+
           <div className="detalhe-grade">
             <DetalheItem icone={<Icon.Box className="ic-pequeno" />} rotulo="Unidade de Medida" valor={card.unidade_medida} />
             <DetalheItem icone={<Icon.Building className="ic-pequeno" />} rotulo="Obra(s)" valor={card.local_exibicao} />

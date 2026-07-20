@@ -9,7 +9,7 @@ Microsoft) ou sincronizado da SharePoint List via polling. O campo
 import enum
 import uuid
 
-from sqlalchemy import Column, String, DateTime, Enum as SQLEnum, Text
+from sqlalchemy import Column, String, DateTime, Enum as SQLEnum, Text, Boolean
 from sqlalchemy.sql import func
 
 from app.core.database import Base
@@ -88,6 +88,13 @@ class Insumo(Base):
 
     origem = Column(SQLEnum(OrigemInsumo), nullable=False, default=OrigemInsumo.APP)
     sharepoint_item_id = Column(String, nullable=True, unique=True)  # dedupe no polling
+
+    # A Graph API não expõe o conteúdo de anexos de SharePoint List (só a
+    # REST API antiga, que exigiria outra permissão Azure). Em vez de
+    # baixar o arquivo, guardamos o link da própria página do item, onde
+    # o anexo já aparece normalmente — mesmo comportamento do SharePoint.
+    tem_anexo = Column(Boolean, nullable=False, default=False)
+    link_sharepoint = Column(String, nullable=True)
 
     criado_em = Column(DateTime(timezone=True), server_default=func.now())
     atualizado_em = Column(
