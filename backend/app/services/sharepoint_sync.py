@@ -28,6 +28,7 @@ item já importado se ele mudar de novo na lista do SharePoint depois).
 
 import logging
 from datetime import date, datetime, timedelta
+from urllib.parse import quote
 
 import requests
 from sqlalchemy.orm import Session
@@ -59,6 +60,20 @@ SITUACAO_PARA_COLUNA = {
 # Valores da coluna "Obra(s)" que na verdade representam escritório/stand,
 # não uma obra de verdade.
 PREFIXOS_ESCRITORIO = ("Domma", "Stand de Vendas")
+
+# O `webUrl` que a Graph API devolve pro item vem num formato "compacto"
+# (tipo ".../1157_.000") que o navegador trata como abertura de arquivo via
+# WebDAV — em vez de mostrar a página do item, tenta baixar/abrir direto e
+# dá erro de permissão. A URL clássica do SharePoint (DispForm.aspx) é a
+# que realmente abre a página de visualização do item, com o anexo como
+# link clicável — é o link que aparece quando você clica em "Compartilhar"
+# num item da lista pelo próprio SharePoint.
+SITE_WEB_URL = "https://dommainc.sharepoint.com/sites/Engenharia-PlanejamentoeControle"
+LISTA_NOME_URL = quote("Cadastro de Insumos")
+
+
+def _montar_link_item(item_id) -> str:
+    return f"{SITE_WEB_URL}/Lists/{LISTA_NOME_URL}/DispForm.aspx?ID={item_id}"
 
 
 def _itens_simulados_sharepoint() -> list[dict]:
@@ -128,7 +143,7 @@ def _mapear_item(item: dict) -> dict | None:
         "data_solicitacao": data_solicitacao,
         "coluna": coluna,
         "tem_anexo": bool(fields.get("Attachments")),
-        "link_sharepoint": item.get("webUrl"),
+        "link_sharepoint": _montar_link_item(item["id"]),
     }
 
 
