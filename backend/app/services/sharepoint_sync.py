@@ -58,8 +58,11 @@ SITUACAO_PARA_COLUNA = {
 }
 
 # Valores da coluna "Obra(s)" que na verdade representam escritório/stand,
-# não uma obra de verdade.
-PREFIXOS_ESCRITORIO = ("Domma", "Stand de Vendas")
+# não uma obra de verdade. Comparação case-insensitive por prefixo — a
+# grafia na lista varia ("Stand de Vendas - Caxias", "Stand - Primavera",
+# "Stand - Prime Primavera"...), então checamos só o começo da palavra
+# "Stand"/"Domma", não a frase inteira.
+PREFIXOS_ESCRITORIO = ("domma", "stand")
 
 # O `webUrl` que a Graph API devolve pro item vem num formato "compacto"
 # (tipo ".../1157_.000") que o navegador trata como abertura de arquivo via
@@ -122,7 +125,7 @@ def _mapear_item(item: dict) -> dict | None:
 
     obras = fields.get("Obra_x0028_s_x0029_") or []
     obra_bruta = obras[0] if obras else None
-    eh_escritorio = obra_bruta is None or obra_bruta.startswith(PREFIXOS_ESCRITORIO)
+    eh_escritorio = obra_bruta is None or obra_bruta.strip().lower().startswith(PREFIXOS_ESCRITORIO)
 
     criado_por = item.get("createdBy", {}).get("user", {})
 
