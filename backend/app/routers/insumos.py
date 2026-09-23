@@ -5,6 +5,7 @@ Endpoints REST do recurso Insumo (os cards do Kanban).
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.auth import obter_usuario_atual, UsuarioAtual
@@ -25,18 +26,27 @@ router = APIRouter(prefix="/api/insumos", tags=["insumos"])
 @router.get("", response_model=list[InsumoResposta])
 def listar_insumos(
     tipo_local: Optional[TipoLocal] = None,
+    obra: Optional[str] = None,
     busca: Optional[str] = None,
     db: Session = Depends(get_db),
     _usuario: UsuarioAtual = Depends(obter_usuario_atual),
 ):
     """
-    Lista insumos, com filtro opcional por tipo_local (escritorio/obra)
-    e busca textual livre (nome, obra, solicitante, aplicação, id).
+    Lista insumos, com filtro opcional por tipo_local (escritorio/obra),
+    por obra específica (dentro de tipo_local=obra) e busca textual livre
+    (nome, obra, solicitante, aplicação, id).
     """
     query = db.query(Insumo)
 
     if tipo_local:
         query = query.filter(Insumo.tipo_local == tipo_local)
+
+    if obra:
+        # case-insensitive: itens importados do SharePoint reproduzem a
+        # grafia exata da lista de lá, que pode variar (ex.: "LIV
+        # Primavera" vs "Liv Primavera") em relação à opção escolhida
+        # no nosso próprio formulário.
+        query = query.filter(func.lower(Insumo.obra) == obra.strip().lower())
 
     insumos = query.order_by(Insumo.criado_em.desc()).all()
 

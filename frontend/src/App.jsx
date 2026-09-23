@@ -51,6 +51,7 @@ function QuadroPrincipal({ usuario, onSair }) {
   const [cardSelecionado, setCardSelecionado] = useState(null);
   const [busca, setBusca] = useState("");
   const [filtroLocal, setFiltroLocal] = useState("");
+  const [filtroObra, setFiltroObra] = useState("");
   const [colunaArrastandoSobre, setColunaArrastandoSobre] = useState(null);
 
   const carregarCards = useCallback(() => {
@@ -58,6 +59,7 @@ function QuadroPrincipal({ usuario, onSair }) {
     setErroCarregamento("");
     const params = {};
     if (filtroLocal) params.tipo_local = filtroLocal;
+    if (filtroObra) params.obra = filtroObra;
     if (busca.trim()) params.busca = busca.trim();
 
     api
@@ -71,7 +73,7 @@ function QuadroPrincipal({ usuario, onSair }) {
         );
       })
       .finally(() => setCarregando(false));
-  }, [filtroLocal, busca]);
+  }, [filtroLocal, filtroObra, busca]);
 
   useEffect(() => {
     carregarCards();
@@ -163,7 +165,14 @@ function QuadroPrincipal({ usuario, onSair }) {
         </div>
 
         <div className="topo-acoes">
-          <FiltroLocal valor={filtroLocal} onMudar={setFiltroLocal} />
+          <FiltroLocal
+            valor={filtroLocal}
+            obra={filtroObra}
+            onMudar={(tipoLocal, obra) => {
+              setFiltroLocal(tipoLocal);
+              setFiltroObra(obra || "");
+            }}
+          />
 
           <label className="campo-busca">
             <Icon.Search className="ic-pequeno" />
