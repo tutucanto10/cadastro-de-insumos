@@ -5,7 +5,7 @@ contagem: mostra backlog atual, o que está parado há mais tempo e
 carga por responsável, além do volume concluído/cancelado no período.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from statistics import mean
 from typing import Optional
 
@@ -27,6 +27,18 @@ MESES_ABREV = [
     "jan", "fev", "mar", "abr", "mai", "jun",
     "jul", "ago", "set", "out", "nov", "dez",
 ]
+
+
+def _tz_aware(dt: datetime) -> datetime:
+    """
+    Normaliza pra timezone-aware (UTC) antes de comparar datas — em
+    produção (Postgres) `Insumo.criado_em` já vem com timezone, mas em
+    dev (SQLite) vem "naive"; Python não deixa comparar os dois tipos
+    diretamente.
+    """
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
 
 
 def _query_obra(db: Session, obra: str):
@@ -92,7 +104,7 @@ def dashboard_obra(
     )
     if dias:
         eventos_periodo_query = eventos_periodo_query.filter(
-            EventoEmail.criado_em >= datetime.utcnow() - timedelta(days=dias)
+            EventoEmail.criado_em >= datetime.now(timezone.utc) - timedelta(days=dias)
         )
 
     concluidos = 0
@@ -133,10 +145,10 @@ def dashboard_obra(
         contagem_status[i.coluna] += 1
     status_atual = [{"coluna": c, "total": contagem_status[c]} for c in ColunaKanban]
 
-    desde_volume = datetime.utcnow() - timedelta(days=dias) if dias else None
+    desde_volume = datetime.now(timezone.utc) - timedelta(days=dias) if dias else None
     candidatos_volume = [
         i for i in todos_da_obra
-        if i.criado_em and (desde_volume is None or i.criado_em >= desde_volume)
+        if i.criado_em and (desde_volume is None or _tz_aware(i.criado_em) >= desde_volume)
     ]
 
     contagem_volume = {}
@@ -147,7 +159,7 @@ def dashboard_obra(
     volume_periodo = []
     if contagem_volume:
         inicio = _bucket_chave(desde_volume, dias) if desde_volume else min(contagem_volume)
-        fim = _bucket_chave(datetime.utcnow(), dias)
+        fim = _bucket_chave(datetime.now(timezone.utc), dias)
         chave_atual = inicio
         while chave_atual <= fim:
             volume_periodo.append(
