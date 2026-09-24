@@ -121,6 +121,16 @@ class DashboardCargaResponsavel(BaseModel):
     total: int
 
 
+class DashboardStatusAtual(BaseModel):
+    coluna: ColunaKanban
+    total: int
+
+
+class DashboardVolumeItem(BaseModel):
+    rotulo: str
+    total: int
+
+
 class DashboardObraResposta(BaseModel):
     obra: str
     periodo_dias: Optional[int]
@@ -129,6 +139,8 @@ class DashboardObraResposta(BaseModel):
     tempo_medio_conclusao_dias: Optional[float]
     mais_antigos_abertos: list[DashboardItemAntigo]
     carga_responsavel: list[DashboardCargaResponsavel]
+    status_atual: list[DashboardStatusAtual]
+    volume_periodo: list[DashboardVolumeItem]
 
 
 class EventoEmailResposta(BaseModel):

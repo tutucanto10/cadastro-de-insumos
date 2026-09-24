@@ -23,6 +23,11 @@ router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
 ABERTOS = (ColunaKanban.A_FAZER, ColunaKanban.EM_ANDAMENTO)
 
+MESES_ABREV = [
+    "jan", "fev", "mar", "abr", "mai", "jun",
+    "jul", "ago", "set", "out", "nov", "dez",
+]
+
 
 def _query_obra(db: Session, obra: str):
     # case-insensitive: mesmo motivo do filtro em GET /api/insumos —
@@ -31,6 +36,38 @@ def _query_obra(db: Session, obra: str):
         Insumo.tipo_local == TipoLocal.OBRA,
         func.lower(Insumo.obra) == obra.strip().lower(),
     )
+
+
+def _bucket_chave(dt: datetime, dias: Optional[int]):
+    """
+    Agrupa uma data num "balde" pro gráfico de volume, escolhendo a
+    granularidade pelo tamanho do período — pra não virar um gráfico de
+    365 barrinhas quando o período é "Tudo", nem um de 1 barra só quando
+    é "7 dias": até 7 dias agrupa por dia, até 30 por semana, do
+    contrário por mês.
+    """
+    if dias is not None and dias <= 7:
+        return dt.date()
+    if dias is not None and dias <= 30:
+        return dt.date() - timedelta(days=dt.weekday())
+    return dt.date().replace(day=1)
+
+
+def _bucket_rotulo(chave, dias: Optional[int]) -> str:
+    if dias is not None and dias <= 7:
+        return chave.strftime("%d/%m")
+    if dias is not None and dias <= 30:
+        return f"sem. {chave.strftime('%d/%m')}"
+    return f"{MESES_ABREV[chave.month - 1]}/{chave.year}"
+
+
+def _proximo_bucket(chave, dias: Optional[int]):
+    if dias is not None and dias <= 7:
+        return chave + timedelta(days=1)
+    if dias is not None and dias <= 30:
+        return chave + timedelta(days=7)
+    # mês seguinte, sem depender de calendar.monthrange
+    return (chave.replace(day=28) + timedelta(days=4)).replace(day=1)
 
 
 @router.get("/obras/{obra}", response_model=DashboardObraResposta)
@@ -89,6 +126,35 @@ def dashboard_obra(
         chave = i.responsavel_chamado.value if i.responsavel_chamado else "Não atribuído"
         carga[chave] = carga.get(chave, 0) + 1
 
+    todos_da_obra = _query_obra(db, obra).all()
+
+    contagem_status = {c: 0 for c in ColunaKanban}
+    for i in todos_da_obra:
+        contagem_status[i.coluna] += 1
+    status_atual = [{"coluna": c, "total": contagem_status[c]} for c in ColunaKanban]
+
+    desde_volume = datetime.utcnow() - timedelta(days=dias) if dias else None
+    candidatos_volume = [
+        i for i in todos_da_obra
+        if i.criado_em and (desde_volume is None or i.criado_em >= desde_volume)
+    ]
+
+    contagem_volume = {}
+    for i in candidatos_volume:
+        chave = _bucket_chave(i.criado_em, dias)
+        contagem_volume[chave] = contagem_volume.get(chave, 0) + 1
+
+    volume_periodo = []
+    if contagem_volume:
+        inicio = _bucket_chave(desde_volume, dias) if desde_volume else min(contagem_volume)
+        fim = _bucket_chave(datetime.utcnow(), dias)
+        chave_atual = inicio
+        while chave_atual <= fim:
+            volume_periodo.append(
+                {"rotulo": _bucket_rotulo(chave_atual, dias), "total": contagem_volume.get(chave_atual, 0)}
+            )
+            chave_atual = _proximo_bucket(chave_atual, dias)
+
     return {
         "obra": obra,
         "periodo_dias": dias,
@@ -107,4 +173,6 @@ def dashboard_obra(
         "carga_responsavel": [
             {"responsavel": responsavel, "total": total} for responsavel, total in carga.items()
         ],
+        "status_atual": status_atual,
+        "volume_periodo": volume_periodo,
     }
