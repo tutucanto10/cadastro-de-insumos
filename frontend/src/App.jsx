@@ -4,6 +4,7 @@ import FormularioInsumo from "./components/FormularioInsumo.jsx";
 import CardInsumo from "./components/CardInsumo.jsx";
 import DetalheCard from "./components/DetalheCard.jsx";
 import FiltroLocal from "./components/FiltroLocal.jsx";
+import PainelDashboards from "./components/PainelDashboards.jsx";
 import { Icon } from "./components/Icon.jsx";
 import { COLUNAS } from "./constants.js";
 import { obterUsuarioLogado, login, logout } from "./services/auth.js";
@@ -48,6 +49,7 @@ function QuadroPrincipal({ usuario, onSair }) {
   const [erroCarregamento, setErroCarregamento] = useState("");
 
   const [formAberto, setFormAberto] = useState(false);
+  const [dashboardsAberto, setDashboardsAberto] = useState(false);
   const [cardSelecionado, setCardSelecionado] = useState(null);
   const [busca, setBusca] = useState("");
   const [filtroLocal, setFiltroLocal] = useState("");
@@ -189,6 +191,11 @@ function QuadroPrincipal({ usuario, onSair }) {
             Novo insumo
           </button>
 
+          <button type="button" className="btn-secundario" onClick={() => setDashboardsAberto(true)}>
+            <Icon.BarChart className="ic-pequeno" />
+            Dashboards
+          </button>
+
           <div className="usuario-logado">
             <span className="avatar-mini avatar-usuario">{usuario.nome.charAt(0).toUpperCase()}</span>
             <span className="usuario-nome">{usuario.nome}</span>
@@ -260,6 +267,8 @@ function QuadroPrincipal({ usuario, onSair }) {
         onFechar={() => setFormAberto(false)}
         onCriar={criarCard}
       />
+
+      <PainelDashboards aberto={dashboardsAberto} onFechar={() => setDashboardsAberto(false)} />
 
       <DetalheCard
         card={cardSelecionado}

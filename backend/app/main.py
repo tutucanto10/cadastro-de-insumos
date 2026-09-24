@@ -18,7 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import CORS_ORIGINS, MOCK_MODE, POLLING_INTERVAL_SECONDS
 from app.core.database import Base, SessionLocal, engine
-from app.routers import insumos, eventos_email, sincronizacao
+from app.routers import dashboard, insumos, eventos_email, sincronizacao
 from app.services.email_service import CREDENCIAIS_CONFIGURADAS as EMAIL_CREDENCIAIS_OK
 from app.services.sharepoint_sync import sincronizar, CREDENCIAIS_CONFIGURADAS as SHAREPOINT_CREDENCIAIS_OK
 
@@ -73,6 +73,7 @@ app.add_middleware(
 app.include_router(insumos.router)
 app.include_router(eventos_email.router)
 app.include_router(sincronizacao.router)
+app.include_router(dashboard.router)
 
 
 @app.on_event("startup")

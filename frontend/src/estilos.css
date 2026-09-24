@@ -815,6 +815,157 @@ body { margin: 0; }
   background: var(--azul-50);
 }
 
+/* ---------- Dashboard por obra ---------- */
+
+.painel-dashboard {
+  width: 560px;
+}
+
+.dash-periodo {
+  font-family: inherit;
+  font-size: 13.5px;
+  padding: 8px 10px;
+  border: 1.5px solid var(--tinta-200);
+  border-radius: var(--raio-sm);
+  outline: none;
+  color: var(--tinta-900);
+  background: var(--branco);
+  margin-bottom: 18px;
+}
+
+.dash-periodo:focus { border-color: var(--azul-600); }
+
+.dash-mensagem {
+  font-size: 13.5px;
+  color: var(--tinta-500);
+}
+
+.dash-erro { color: var(--vermelho-600); }
+
+.dash-kpis {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.dash-kpi-card {
+  background: var(--tinta-50);
+  border: 1px solid var(--tinta-200);
+  border-radius: var(--raio);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dash-kpi-numero {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--tinta-900);
+}
+
+.dash-kpi-legenda {
+  font-size: 12px;
+  color: var(--tinta-500);
+  line-height: 1.4;
+}
+
+.dash-secao-titulo {
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--tinta-900);
+  margin: 0 0 10px;
+}
+
+.dash-lista-antigos {
+  list-style: none;
+  margin: 0 0 24px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.dash-item-antigo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 11px;
+  background: var(--tinta-50);
+  border-radius: var(--raio-sm);
+  font-size: 13px;
+}
+
+.dash-marcador {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--cor);
+  flex-shrink: 0;
+}
+
+.dash-item-nome {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--tinta-900);
+}
+
+.dash-item-dias {
+  color: var(--tinta-500);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.dash-carga {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.dash-carga-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.dash-carga-nome {
+  width: 130px;
+  flex-shrink: 0;
+  color: var(--tinta-900);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-carga-barra-trilha {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--tinta-100);
+  overflow: hidden;
+}
+
+.dash-carga-barra {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--azul-600);
+}
+
+.dash-carga-numero {
+  width: 20px;
+  text-align: right;
+  color: var(--tinta-500);
+  flex-shrink: 0;
+}
+
 /* ---------- Etapa: detalhes (formulário final) ---------- */
 
 .local-resumo {

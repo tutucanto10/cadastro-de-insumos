@@ -97,4 +97,10 @@ export const Icon = {
       <path d="M13 13.5l4-3.5-4-3.5M17 10H7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
+  BarChart: (p) => (
+    <svg viewBox="0 0 20 20" fill="none" {...p}>
+      <path d="M3 17V8.5M9 17V3M15 17v-5.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M2 17h16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  ),
 };

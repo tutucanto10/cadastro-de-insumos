@@ -98,6 +98,39 @@ class InsumoResposta(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class DashboardEmAberto(BaseModel):
+    a_fazer: int
+    em_andamento: int
+    total: int
+
+
+class DashboardPeriodo(BaseModel):
+    concluidos: int
+    cancelados: int
+
+
+class DashboardItemAntigo(BaseModel):
+    id: str
+    nome_insumo: str
+    coluna: ColunaKanban
+    criado_em: datetime
+
+
+class DashboardCargaResponsavel(BaseModel):
+    responsavel: str
+    total: int
+
+
+class DashboardObraResposta(BaseModel):
+    obra: str
+    periodo_dias: Optional[int]
+    em_aberto: DashboardEmAberto
+    periodo: DashboardPeriodo
+    tempo_medio_conclusao_dias: Optional[float]
+    mais_antigos_abertos: list[DashboardItemAntigo]
+    carga_responsavel: list[DashboardCargaResponsavel]
+
+
 class EventoEmailResposta(BaseModel):
     id: str
     insumo_id: str

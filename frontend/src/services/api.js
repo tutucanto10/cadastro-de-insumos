@@ -79,6 +79,11 @@ export const api = {
   sincronizarSharepoint: () =>
     chamarApi("/api/sincronizacao/sharepoint", { method: "POST" }),
 
+  dashboardObra: (obra, dias) =>
+    chamarApi(
+      `/api/dashboard/obras/${encodeURIComponent(obra)}${dias ? `?dias=${dias}` : ""}`
+    ),
+
   verificarSaude: () => chamarApi("/api/saude"),
 };
 
