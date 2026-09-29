@@ -40,7 +40,9 @@ TITULOS_COLUNA = {
 
 MENSAGENS_POR_COLUNA = {
     ColunaKanban.A_FAZER: (
-        "Sua solicitação foi registrada e está na fila de atendimento."
+        "Seu chamado foi recebido e será processado pela equipe de Planejamento. "
+        "O prazo para análise é de 3 (três) dias úteis, e a finalização está "
+        "prevista para 3 (três) dias úteis após a conclusão da análise."
     ),
     ColunaKanban.EM_ANDAMENTO: (
         "Sua solicitação está sendo atendida no momento."
