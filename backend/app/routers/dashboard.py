@@ -18,7 +18,7 @@ from app.core.auth import obter_usuario_atual, UsuarioAtual
 from app.core.database import get_db
 from app.models.evento_email import EventoEmail
 from app.models.insumo import ColunaKanban, Insumo, TipoLocal
-from app.models.schemas import DashboardObraResposta
+from app.models.schemas import DashboardLocalItem, DashboardObraResposta
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
@@ -53,6 +53,13 @@ def _escopo_obra(db: Session, obra: str):
 
 def _escopo_escritorio(db: Session):
     return db.query(Insumo).filter(Insumo.tipo_local == TipoLocal.ESCRITORIO)
+
+
+def _escopo_escritorio_local(db: Session, local: str):
+    return db.query(Insumo).filter(
+        Insumo.tipo_local == TipoLocal.ESCRITORIO,
+        func.lower(Insumo.obra) == local.strip().lower(),
+    )
 
 
 def _bucket_chave(dt: datetime, dias: Optional[int]):
@@ -205,3 +212,36 @@ def dashboard_escritorio(
     _usuario: UsuarioAtual = Depends(obter_usuario_atual),
 ):
     return _montar_dashboard(db, _escopo_escritorio(db), "Escritório/Stand", dias)
+
+
+@router.get("/escritorio/locais", response_model=list[DashboardLocalItem])
+def listar_locais_escritorio(
+    db: Session = Depends(get_db),
+    _usuario: UsuarioAtual = Depends(obter_usuario_atual),
+):
+    """
+    Lista os centros de custo/stands com chamados (o campo "Obra(s)" do
+    SharePoint, guardado mesmo pra itens de escritório) — busca direto
+    do banco em vez de uma lista fixa, porque a grafia varia
+    (ex.: "Stand - Primavera" vs "Stand de Vendas - São Gonçalo") e uma
+    lista curada manualmente ia fragmentar em entradas duplicadas.
+    """
+    contagem = {}
+    for i in _escopo_escritorio(db).all():
+        if not i.obra:
+            continue
+        contagem[i.obra] = contagem.get(i.obra, 0) + 1
+    return sorted(
+        [{"local": local, "total": total} for local, total in contagem.items()],
+        key=lambda item: -item["total"],
+    )
+
+
+@router.get("/escritorio/local/{local}", response_model=DashboardObraResposta)
+def dashboard_escritorio_local(
+    local: str,
+    dias: Optional[int] = Query(default=None, ge=1),
+    db: Session = Depends(get_db),
+    _usuario: UsuarioAtual = Depends(obter_usuario_atual),
+):
+    return _montar_dashboard(db, _escopo_escritorio_local(db, local), local, dias)

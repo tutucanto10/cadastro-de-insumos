@@ -54,7 +54,10 @@ class Insumo(Base):
     unidade_medida = Column(String, nullable=False)
 
     tipo_local = Column(SQLEnum(TipoLocal), nullable=False)
-    obra = Column(String, nullable=True)  # preenchido só quando tipo_local == OBRA
+    # Nome da obra (tipo_local == OBRA) ou do centro de custo/stand
+    # (tipo_local == ESCRITORIO, só pra itens vindos do SharePoint — usado
+    # no dashboard, local_exibicao não usa esse campo nesse caso).
+    obra = Column(String, nullable=True)
 
     detalhes = Column(Text, nullable=False)
     marca = Column(String, nullable=True)

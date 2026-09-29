@@ -815,6 +815,27 @@ body { margin: 0; }
   background: var(--azul-50);
 }
 
+.lista-locais-escritorio {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: -1px 0 0 18px;
+  padding-left: 12px;
+  border-left: 2px solid var(--tinta-200);
+}
+
+.opcao-local-escritorio {
+  padding: 9px 13px;
+  font-size: 12.5px;
+  font-weight: 500;
+  background: var(--branco);
+}
+
+.opcao-local-contagem {
+  color: var(--tinta-500);
+  font-weight: 600;
+}
+
 /* ---------- Dashboard por obra ---------- */
 
 .painel-dashboard {

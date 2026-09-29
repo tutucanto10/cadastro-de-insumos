@@ -131,6 +131,11 @@ class DashboardVolumeItem(BaseModel):
     total: int
 
 
+class DashboardLocalItem(BaseModel):
+    local: str
+    total: int
+
+
 class DashboardObraResposta(BaseModel):
     titulo: str
     periodo_dias: Optional[int]

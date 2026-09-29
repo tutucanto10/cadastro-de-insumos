@@ -87,6 +87,13 @@ export const api = {
   dashboardEscritorio: (dias) =>
     chamarApi(`/api/dashboard/escritorio${dias ? `?dias=${dias}` : ""}`),
 
+  listarLocaisEscritorio: () => chamarApi("/api/dashboard/escritorio/locais"),
+
+  dashboardEscritorioLocal: (local, dias) =>
+    chamarApi(
+      `/api/dashboard/escritorio/local/${encodeURIComponent(local)}${dias ? `?dias=${dias}` : ""}`
+    ),
+
   verificarSaude: () => chamarApi("/api/saude"),
 };
 

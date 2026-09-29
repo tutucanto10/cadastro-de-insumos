@@ -137,7 +137,11 @@ def _mapear_item(item: dict) -> dict | None:
         "nome_insumo": fields.get("LinkTitle") or fields.get("Title") or "(sem nome)",
         "unidade_medida": (fields.get("UnidadedeMedida") or "").strip() or "Un.",
         "tipo_local": TipoLocal.ESCRITORIO if eh_escritorio else TipoLocal.OBRA,
-        "obra": None if eh_escritorio else obra_bruta,
+        # Guarda o valor bruto também pra itens de escritório/stand — vira
+        # "Domma Adm", "Stand de Vendas - Inhaúma" etc., usado no dashboard
+        # por centro de custo (não afeta a exibição no Kanban: local_exibicao
+        # não olha pra esse campo quando tipo_local é escritório).
+        "obra": obra_bruta.strip() if obra_bruta else None,
         "detalhes": fields.get("Detalhes") or "",
         "marca": fields.get("Marca"),
         "aplicacao": fields.get("Aplica_x00e7__x00e3_o") or "",

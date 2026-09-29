@@ -114,12 +114,13 @@ function GraficoBarrasVolume({ dados }) {
 
 export default function PainelDashboards({ aberto, onFechar }) {
   const [etapa, setEtapa] = useState(ETAPA.ESCOLHER_LOCAL);
-  // selecao: { tipo: "obra", nome: "LIV Primavera" } ou { tipo: "escritorio" }
+  // selecao: { tipo: "obra" | "escritorio" | "escritorio-local", nome? }
   const [selecao, setSelecao] = useState(null);
   const [dias, setDias] = useState(30);
   const [dados, setDados] = useState(null);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState("");
+  const [locaisEscritorio, setLocaisEscritorio] = useState([]);
 
   useEffect(() => {
     if (aberto) {
@@ -128,6 +129,10 @@ export default function PainelDashboards({ aberto, onFechar }) {
       setDias(30);
       setDados(null);
       setErro("");
+      api
+        .listarLocaisEscritorio()
+        .then(setLocaisEscritorio)
+        .catch(() => setLocaisEscritorio([]));
     }
   }, [aberto]);
 
@@ -135,10 +140,11 @@ export default function PainelDashboards({ aberto, onFechar }) {
     if (etapa !== ETAPA.VER_DASHBOARD || !selecao) return;
     setCarregando(true);
     setErro("");
-    const busca =
-      selecao.tipo === "escritorio"
-        ? api.dashboardEscritorio(dias)
-        : api.dashboardObra(selecao.nome, dias);
+    let busca;
+    if (selecao.tipo === "escritorio") busca = api.dashboardEscritorio(dias);
+    else if (selecao.tipo === "escritorio-local") busca = api.dashboardEscritorioLocal(selecao.nome, dias);
+    else busca = api.dashboardObra(selecao.nome, dias);
+
     busca
       .then(setDados)
       .catch((err) => {
@@ -159,7 +165,17 @@ export default function PainelDashboards({ aberto, onFechar }) {
     setEtapa(ETAPA.VER_DASHBOARD);
   };
 
-  const tituloAtual = selecao?.tipo === "escritorio" ? "Escritório/Stand" : selecao?.nome;
+  const escolherEscritorioLocal = (nomeLocal) => {
+    setSelecao({ tipo: "escritorio-local", nome: nomeLocal });
+    setEtapa(ETAPA.VER_DASHBOARD);
+  };
+
+  const tituloAtual =
+    selecao?.tipo === "escritorio"
+      ? "Escritório/Stand"
+      : selecao?.tipo === "escritorio-local"
+      ? `Escritório/Stand > ${selecao.nome}`
+      : selecao?.nome;
 
   const maiorCarga = dados ? Math.max(1, ...dados.carga_responsavel.map((c) => c.total)) : 1;
 
@@ -195,6 +211,21 @@ export default function PainelDashboards({ aberto, onFechar }) {
                   <span>Escritório/Stand</span>
                   <Icon.Chevron className="ic-seta" />
                 </button>
+                {locaisEscritorio.length > 0 && (
+                  <div className="lista-locais-escritorio">
+                    {locaisEscritorio.map((l) => (
+                      <button
+                        type="button"
+                        key={l.local}
+                        className="opcao-obra opcao-local-escritorio"
+                        onClick={() => escolherEscritorioLocal(l.local)}
+                      >
+                        <span>{l.local}</span>
+                        <span className="opcao-local-contagem">{l.total}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {OBRAS.map((nomeObra) => (
                   <button
                     type="button"
