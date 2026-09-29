@@ -84,6 +84,9 @@ export const api = {
       `/api/dashboard/obras/${encodeURIComponent(obra)}${dias ? `?dias=${dias}` : ""}`
     ),
 
+  dashboardEscritorio: (dias) =>
+    chamarApi(`/api/dashboard/escritorio${dias ? `?dias=${dias}` : ""}`),
+
   verificarSaude: () => chamarApi("/api/saude"),
 };
 

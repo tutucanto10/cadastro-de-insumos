@@ -3,7 +3,7 @@ import { Icon } from "./Icon.jsx";
 import { COLUNAS, OBRAS } from "../constants.js";
 import { api, ErroApi } from "../services/api.js";
 
-const ETAPA = { ESCOLHER_OBRA: "escolher-obra", VER_OBRA: "ver-obra" };
+const ETAPA = { ESCOLHER_LOCAL: "escolher-local", VER_DASHBOARD: "ver-dashboard" };
 
 const PERIODOS = [
   { dias: 7, titulo: "Últimos 7 dias" },
@@ -113,8 +113,9 @@ function GraficoBarrasVolume({ dados }) {
 }
 
 export default function PainelDashboards({ aberto, onFechar }) {
-  const [etapa, setEtapa] = useState(ETAPA.ESCOLHER_OBRA);
-  const [obra, setObra] = useState(null);
+  const [etapa, setEtapa] = useState(ETAPA.ESCOLHER_LOCAL);
+  // selecao: { tipo: "obra", nome: "LIV Primavera" } ou { tipo: "escritorio" }
+  const [selecao, setSelecao] = useState(null);
   const [dias, setDias] = useState(30);
   const [dados, setDados] = useState(null);
   const [carregando, setCarregando] = useState(false);
@@ -122,8 +123,8 @@ export default function PainelDashboards({ aberto, onFechar }) {
 
   useEffect(() => {
     if (aberto) {
-      setEtapa(ETAPA.ESCOLHER_OBRA);
-      setObra(null);
+      setEtapa(ETAPA.ESCOLHER_LOCAL);
+      setSelecao(null);
       setDias(30);
       setDados(null);
       setErro("");
@@ -131,44 +132,54 @@ export default function PainelDashboards({ aberto, onFechar }) {
   }, [aberto]);
 
   useEffect(() => {
-    if (etapa !== ETAPA.VER_OBRA || !obra) return;
+    if (etapa !== ETAPA.VER_DASHBOARD || !selecao) return;
     setCarregando(true);
     setErro("");
-    api
-      .dashboardObra(obra, dias)
+    const busca =
+      selecao.tipo === "escritorio"
+        ? api.dashboardEscritorio(dias)
+        : api.dashboardObra(selecao.nome, dias);
+    busca
       .then(setDados)
       .catch((err) => {
         setErro(err instanceof ErroApi ? err.message : "Não foi possível carregar os números.");
       })
       .finally(() => setCarregando(false));
-  }, [etapa, obra, dias]);
+  }, [etapa, selecao, dias]);
 
   if (!aberto) return null;
 
   const escolherObra = (nomeObra) => {
-    setObra(nomeObra);
-    setEtapa(ETAPA.VER_OBRA);
+    setSelecao({ tipo: "obra", nome: nomeObra });
+    setEtapa(ETAPA.VER_DASHBOARD);
   };
+
+  const escolherEscritorio = () => {
+    setSelecao({ tipo: "escritorio" });
+    setEtapa(ETAPA.VER_DASHBOARD);
+  };
+
+  const tituloAtual = selecao?.tipo === "escritorio" ? "Escritório/Stand" : selecao?.nome;
 
   const maiorCarga = dados ? Math.max(1, ...dados.carga_responsavel.map((c) => c.total)) : 1;
 
   return (
-    <div className="overlay" role="dialog" aria-modal="true" aria-label="Dashboards por obra">
+    <div className="overlay" role="dialog" aria-modal="true" aria-label="Dashboards">
       <div className="overlay-backdrop" onClick={onFechar} />
       <div className="painel-form painel-dashboard">
         <header className="painel-form-header">
           <div className="painel-form-titulo">
-            {etapa === ETAPA.VER_OBRA && (
+            {etapa === ETAPA.VER_DASHBOARD && (
               <button
                 type="button"
                 className="btn-icone"
-                onClick={() => setEtapa(ETAPA.ESCOLHER_OBRA)}
+                onClick={() => setEtapa(ETAPA.ESCOLHER_LOCAL)}
                 aria-label="Voltar"
               >
                 <Icon.Back className="ic" />
               </button>
             )}
-            <h2>{etapa === ETAPA.VER_OBRA ? obra : "Dashboards"}</h2>
+            <h2>{etapa === ETAPA.VER_DASHBOARD ? tituloAtual : "Dashboards"}</h2>
           </div>
           <button type="button" className="btn-icone" onClick={onFechar} aria-label="Fechar">
             <Icon.Close className="ic" />
@@ -176,10 +187,14 @@ export default function PainelDashboards({ aberto, onFechar }) {
         </header>
 
         <div className="painel-form-corpo">
-          {etapa === ETAPA.ESCOLHER_OBRA && (
+          {etapa === ETAPA.ESCOLHER_LOCAL && (
             <section className="etapa-local">
-              <p className="etapa-pergunta">Qual obra?</p>
+              <p className="etapa-pergunta">Qual local?</p>
               <div className="lista-obras">
+                <button type="button" className="opcao-obra" onClick={escolherEscritorio}>
+                  <span>Escritório/Stand</span>
+                  <Icon.Chevron className="ic-seta" />
+                </button>
                 {OBRAS.map((nomeObra) => (
                   <button
                     type="button"
@@ -195,7 +210,7 @@ export default function PainelDashboards({ aberto, onFechar }) {
             </section>
           )}
 
-          {etapa === ETAPA.VER_OBRA && (
+          {etapa === ETAPA.VER_DASHBOARD && (
             <section className="dash">
               <select
                 className="dash-periodo"

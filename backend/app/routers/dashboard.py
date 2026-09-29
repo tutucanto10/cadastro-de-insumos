@@ -1,8 +1,9 @@
 """
-Endpoint de números agregados por obra, pro botão "Dashboards" do
-frontend — apresentação em reunião do time de atendimento, não é só
-contagem: mostra backlog atual, o que está parado há mais tempo e
-carga por responsável, além do volume concluído/cancelado no período.
+Endpoint de números agregados por obra (ou por Escritório/Stand), pro
+botão "Dashboards" do frontend — apresentação em reunião do time de
+atendimento, não é só contagem: mostra backlog atual, o que está
+parado há mais tempo e carga por responsável, além do volume
+concluído/cancelado no período.
 """
 
 from datetime import datetime, timedelta, timezone
@@ -41,13 +42,17 @@ def _tz_aware(dt: datetime) -> datetime:
     return dt
 
 
-def _query_obra(db: Session, obra: str):
+def _escopo_obra(db: Session, obra: str):
     # case-insensitive: mesmo motivo do filtro em GET /api/insumos —
     # grafia varia entre o que vem do SharePoint e o formulário do app.
     return db.query(Insumo).filter(
         Insumo.tipo_local == TipoLocal.OBRA,
         func.lower(Insumo.obra) == obra.strip().lower(),
     )
+
+
+def _escopo_escritorio(db: Session):
+    return db.query(Insumo).filter(Insumo.tipo_local == TipoLocal.ESCRITORIO)
 
 
 def _bucket_chave(dt: datetime, dias: Optional[int]):
@@ -82,25 +87,26 @@ def _proximo_bucket(chave, dias: Optional[int]):
     return (chave.replace(day=28) + timedelta(days=4)).replace(day=1)
 
 
-@router.get("/obras/{obra}", response_model=DashboardObraResposta)
-def dashboard_obra(
-    obra: str,
-    dias: Optional[int] = Query(default=None, ge=1),
-    db: Session = Depends(get_db),
-    _usuario: UsuarioAtual = Depends(obter_usuario_atual),
-):
-    abertos = _query_obra(db, obra).filter(Insumo.coluna.in_(ABERTOS)).all()
+def _montar_dashboard(db: Session, escopo_query, titulo: str, dias: Optional[int]) -> dict:
+    """
+    Monta a resposta completa do dashboard a partir de uma query já
+    filtrada pro escopo desejado (uma obra específica, ou todo o
+    Escritório/Stand) — o resto da conta (backlog, período, tempo
+    médio, mais antigos, carga, status atual, volume) é idêntico nos
+    dois casos.
+    """
+    abertos = escopo_query.filter(Insumo.coluna.in_(ABERTOS)).all()
     a_fazer = sum(1 for i in abertos if i.coluna == ColunaKanban.A_FAZER)
     em_andamento = sum(1 for i in abertos if i.coluna == ColunaKanban.EM_ANDAMENTO)
 
-    eventos_periodo_query = (
-        db.query(EventoEmail, Insumo.criado_em)
-        .join(Insumo, Insumo.id == EventoEmail.insumo_id)
-        .filter(
-            Insumo.tipo_local == TipoLocal.OBRA,
-            func.lower(Insumo.obra) == obra.strip().lower(),
-            EventoEmail.coluna_nova.in_(["concluido", "cancelado"]),
-        )
+    todos_do_escopo = escopo_query.all()
+    ids_todos = [i.id for i in todos_do_escopo]
+
+    eventos_periodo_query = db.query(EventoEmail, Insumo.criado_em).join(
+        Insumo, Insumo.id == EventoEmail.insumo_id
+    ).filter(
+        EventoEmail.insumo_id.in_(ids_todos),
+        EventoEmail.coluna_nova.in_(["concluido", "cancelado"]),
     )
     if dias:
         eventos_periodo_query = eventos_periodo_query.filter(
@@ -125,29 +131,21 @@ def dashboard_obra(
         media_segundos = mean(d.total_seconds() for d in primeira_conclusao.values())
         tempo_medio = round(media_segundos / 86400, 1)
 
-    mais_antigos = (
-        _query_obra(db, obra)
-        .filter(Insumo.coluna.in_(ABERTOS))
-        .order_by(Insumo.criado_em.asc())
-        .limit(5)
-        .all()
-    )
+    mais_antigos = sorted(abertos, key=lambda i: i.criado_em)[:5]
 
     carga = {}
     for i in abertos:
         chave = i.responsavel_chamado.value if i.responsavel_chamado else "Não atribuído"
         carga[chave] = carga.get(chave, 0) + 1
 
-    todos_da_obra = _query_obra(db, obra).all()
-
     contagem_status = {c: 0 for c in ColunaKanban}
-    for i in todos_da_obra:
+    for i in todos_do_escopo:
         contagem_status[i.coluna] += 1
     status_atual = [{"coluna": c, "total": contagem_status[c]} for c in ColunaKanban]
 
     desde_volume = datetime.now(timezone.utc) - timedelta(days=dias) if dias else None
     candidatos_volume = [
-        i for i in todos_da_obra
+        i for i in todos_do_escopo
         if i.criado_em and (desde_volume is None or _tz_aware(i.criado_em) >= desde_volume)
     ]
 
@@ -168,7 +166,7 @@ def dashboard_obra(
             chave_atual = _proximo_bucket(chave_atual, dias)
 
     return {
-        "obra": obra,
+        "titulo": titulo,
         "periodo_dias": dias,
         "em_aberto": {"a_fazer": a_fazer, "em_andamento": em_andamento, "total": len(abertos)},
         "periodo": {"concluidos": concluidos, "cancelados": cancelados},
@@ -188,3 +186,22 @@ def dashboard_obra(
         "status_atual": status_atual,
         "volume_periodo": volume_periodo,
     }
+
+
+@router.get("/obras/{obra}", response_model=DashboardObraResposta)
+def dashboard_obra(
+    obra: str,
+    dias: Optional[int] = Query(default=None, ge=1),
+    db: Session = Depends(get_db),
+    _usuario: UsuarioAtual = Depends(obter_usuario_atual),
+):
+    return _montar_dashboard(db, _escopo_obra(db, obra), obra, dias)
+
+
+@router.get("/escritorio", response_model=DashboardObraResposta)
+def dashboard_escritorio(
+    dias: Optional[int] = Query(default=None, ge=1),
+    db: Session = Depends(get_db),
+    _usuario: UsuarioAtual = Depends(obter_usuario_atual),
+):
+    return _montar_dashboard(db, _escopo_escritorio(db), "Escritório/Stand", dias)

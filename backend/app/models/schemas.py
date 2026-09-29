@@ -132,7 +132,7 @@ class DashboardVolumeItem(BaseModel):
 
 
 class DashboardObraResposta(BaseModel):
-    obra: str
+    titulo: str
     periodo_dias: Optional[int]
     em_aberto: DashboardEmAberto
     periodo: DashboardPeriodo
