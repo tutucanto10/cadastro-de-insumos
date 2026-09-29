@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 
 from app.core.auth import obter_usuario_atual, UsuarioAtual
 from app.core.database import get_db
+from app.core.dias_uteis import tz_aware
 from app.models.evento_email import EventoEmail
 from app.models.insumo import ColunaKanban, Insumo, TipoLocal
 from app.models.schemas import DashboardLocalItem, DashboardObraResposta
@@ -28,18 +29,6 @@ MESES_ABREV = [
     "jan", "fev", "mar", "abr", "mai", "jun",
     "jul", "ago", "set", "out", "nov", "dez",
 ]
-
-
-def _tz_aware(dt: datetime) -> datetime:
-    """
-    Normaliza pra timezone-aware (UTC) antes de comparar datas — em
-    produção (Postgres) `Insumo.criado_em` já vem com timezone, mas em
-    dev (SQLite) vem "naive"; Python não deixa comparar os dois tipos
-    diretamente.
-    """
-    if dt.tzinfo is None:
-        return dt.replace(tzinfo=timezone.utc)
-    return dt
 
 
 def _escopo_obra(db: Session, obra: str):
@@ -94,6 +83,49 @@ def _proximo_bucket(chave, dias: Optional[int]):
     return (chave.replace(day=28) + timedelta(days=4)).replace(day=1)
 
 
+def _calcular_periodo(
+    db: Session,
+    ids_todos: list[str],
+    desde: Optional[datetime],
+    ate: Optional[datetime],
+) -> dict:
+    """
+    Concluídos/cancelados/tempo médio dentro de uma janela [desde, ate)
+    — usado pro período atual (ate=None, sem limite superior) e pro
+    período anterior de mesmo tamanho (comparação de delta).
+    """
+    query = db.query(EventoEmail, Insumo.criado_em).join(
+        Insumo, Insumo.id == EventoEmail.insumo_id
+    ).filter(
+        EventoEmail.insumo_id.in_(ids_todos),
+        EventoEmail.coluna_nova.in_(["concluido", "cancelado"]),
+    )
+    if desde:
+        query = query.filter(EventoEmail.criado_em >= desde)
+    if ate:
+        query = query.filter(EventoEmail.criado_em < ate)
+
+    concluidos = 0
+    cancelados = 0
+    primeira_conclusao = {}  # insumo_id -> menor duração (criado_em do insumo até o evento)
+    for evento, insumo_criado_em in query.all():
+        if evento.coluna_nova == "concluido":
+            concluidos += 1
+            duracao = evento.criado_em - insumo_criado_em
+            anterior = primeira_conclusao.get(evento.insumo_id)
+            if anterior is None or duracao < anterior:
+                primeira_conclusao[evento.insumo_id] = duracao
+        else:
+            cancelados += 1
+
+    tempo_medio = None
+    if primeira_conclusao:
+        media_segundos = mean(d.total_seconds() for d in primeira_conclusao.values())
+        tempo_medio = round(media_segundos / 86400, 1)
+
+    return {"concluidos": concluidos, "cancelados": cancelados, "tempo_medio_conclusao_dias": tempo_medio}
+
+
 def _montar_dashboard(db: Session, escopo_query, titulo: str, dias: Optional[int]) -> dict:
     """
     Monta a resposta completa do dashboard a partir de uma query já
@@ -109,34 +141,18 @@ def _montar_dashboard(db: Session, escopo_query, titulo: str, dias: Optional[int
     todos_do_escopo = escopo_query.all()
     ids_todos = [i.id for i in todos_do_escopo]
 
-    eventos_periodo_query = db.query(EventoEmail, Insumo.criado_em).join(
-        Insumo, Insumo.id == EventoEmail.insumo_id
-    ).filter(
-        EventoEmail.insumo_id.in_(ids_todos),
-        EventoEmail.coluna_nova.in_(["concluido", "cancelado"]),
-    )
+    agora = datetime.now(timezone.utc)
+    desde_atual = agora - timedelta(days=dias) if dias else None
+    periodo_atual = _calcular_periodo(db, ids_todos, desde_atual, None)
+    concluidos = periodo_atual["concluidos"]
+    cancelados = periodo_atual["cancelados"]
+    tempo_medio = periodo_atual["tempo_medio_conclusao_dias"]
+
+    periodo_anterior = None
     if dias:
-        eventos_periodo_query = eventos_periodo_query.filter(
-            EventoEmail.criado_em >= datetime.now(timezone.utc) - timedelta(days=dias)
+        periodo_anterior = _calcular_periodo(
+            db, ids_todos, agora - timedelta(days=2 * dias), agora - timedelta(days=dias)
         )
-
-    concluidos = 0
-    cancelados = 0
-    primeira_conclusao = {}  # insumo_id -> menor duração (criado_em do insumo até o evento)
-    for evento, insumo_criado_em in eventos_periodo_query.all():
-        if evento.coluna_nova == "concluido":
-            concluidos += 1
-            duracao = evento.criado_em - insumo_criado_em
-            anterior = primeira_conclusao.get(evento.insumo_id)
-            if anterior is None or duracao < anterior:
-                primeira_conclusao[evento.insumo_id] = duracao
-        else:
-            cancelados += 1
-
-    tempo_medio = None
-    if primeira_conclusao:
-        media_segundos = mean(d.total_seconds() for d in primeira_conclusao.values())
-        tempo_medio = round(media_segundos / 86400, 1)
 
     mais_antigos = sorted(abertos, key=lambda i: i.criado_em)[:5]
 
@@ -153,7 +169,7 @@ def _montar_dashboard(db: Session, escopo_query, titulo: str, dias: Optional[int
     desde_volume = datetime.now(timezone.utc) - timedelta(days=dias) if dias else None
     candidatos_volume = [
         i for i in todos_do_escopo
-        if i.criado_em and (desde_volume is None or _tz_aware(i.criado_em) >= desde_volume)
+        if i.criado_em and (desde_volume is None or tz_aware(i.criado_em) >= desde_volume)
     ]
 
     contagem_volume = {}
@@ -178,12 +194,14 @@ def _montar_dashboard(db: Session, escopo_query, titulo: str, dias: Optional[int
         "em_aberto": {"a_fazer": a_fazer, "em_andamento": em_andamento, "total": len(abertos)},
         "periodo": {"concluidos": concluidos, "cancelados": cancelados},
         "tempo_medio_conclusao_dias": tempo_medio,
+        "periodo_anterior": periodo_anterior,
         "mais_antigos_abertos": [
             {
                 "id": i.id,
                 "nome_insumo": i.nome_insumo,
                 "coluna": i.coluna,
                 "criado_em": i.criado_em,
+                "atrasado": i.atrasado,
             }
             for i in mais_antigos
         ],

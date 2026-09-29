@@ -87,13 +87,13 @@ function QuadroPrincipal({ usuario, onSair }) {
     setFormAberto(false);
   };
 
-  const mudarColuna = async (id, coluna, motivoCancelamento) => {
+  const mudarColuna = async (id, coluna, motivoCancelamento, responsavelChamado) => {
     // atualização otimista — reflete na tela antes da resposta do servidor
     setCards((prev) => prev.map((c) => (c.id === id ? { ...c, coluna } : c)));
     setCardSelecionado((sel) => (sel && sel.id === id ? { ...sel, coluna } : sel));
 
     try {
-      const atualizado = await api.mudarColuna(id, coluna, motivoCancelamento);
+      const atualizado = await api.mudarColuna(id, coluna, motivoCancelamento, responsavelChamado);
       setCards((prev) => prev.map((c) => (c.id === id ? atualizado : c)));
       setCardSelecionado((sel) => (sel && sel.id === id ? atualizado : sel));
     } catch (err) {

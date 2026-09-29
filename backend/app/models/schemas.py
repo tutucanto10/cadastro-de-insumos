@@ -42,6 +42,11 @@ class InsumoCriar(BaseModel):
 class InsumoMudarColuna(BaseModel):
     coluna: ColunaKanban
     motivo_cancelamento: Optional[str] = None
+    # Só usado ao mover pra "em-andamento" quando o chamado ainda não tem
+    # responsável — ver validação em routers/insumos.py (depende do
+    # estado atual do insumo no banco, não dá pra validar só com o
+    # corpo da requisição).
+    responsavel_chamado: Optional[ResponsavelChamado] = None
 
     # model_validator (não field_validator) porque field_validator não roda
     # quando o campo fica no valor padrão (None) — e é exatamente esse o
@@ -92,6 +97,7 @@ class InsumoResposta(BaseModel):
     origem: OrigemInsumo
     tem_anexo: bool
     link_sharepoint: Optional[str]
+    atrasado: bool
     criado_em: datetime
     atualizado_em: datetime
 
@@ -109,11 +115,18 @@ class DashboardPeriodo(BaseModel):
     cancelados: int
 
 
+class DashboardPeriodoComparativo(BaseModel):
+    concluidos: int
+    cancelados: int
+    tempo_medio_conclusao_dias: Optional[float]
+
+
 class DashboardItemAntigo(BaseModel):
     id: str
     nome_insumo: str
     coluna: ColunaKanban
     criado_em: datetime
+    atrasado: bool
 
 
 class DashboardCargaResponsavel(BaseModel):
@@ -142,6 +155,7 @@ class DashboardObraResposta(BaseModel):
     em_aberto: DashboardEmAberto
     periodo: DashboardPeriodo
     tempo_medio_conclusao_dias: Optional[float]
+    periodo_anterior: Optional[DashboardPeriodoComparativo]
     mais_antigos_abertos: list[DashboardItemAntigo]
     carga_responsavel: list[DashboardCargaResponsavel]
     status_atual: list[DashboardStatusAtual]

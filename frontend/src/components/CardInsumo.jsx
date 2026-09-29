@@ -4,7 +4,7 @@ import { formatarDataBR, formatarHora } from "../constants.js";
 export default function CardInsumo({ card, onAbrir, onArrastarInicio }) {
   return (
     <article
-      className="card"
+      className={`card ${card.atrasado ? "card-atrasado" : ""}`}
       draggable
       onDragStart={(e) => onArrastarInicio(e, card.id)}
       onClick={() => onAbrir(card)}
@@ -17,6 +17,11 @@ export default function CardInsumo({ card, onAbrir, onArrastarInicio }) {
       <div className="card-topo">
         <span className="card-id">{card.id}</span>
         <span className="card-local">{card.local_exibicao}</span>
+        {card.atrasado && (
+          <span className="card-tag-atrasado" title="Passou de 3 dias úteis em A Fazer">
+            Atrasado
+          </span>
+        )}
       </div>
       <h3 className="card-nome">{card.nome_insumo}</h3>
       <p className="card-detalhes">{card.detalhes}</p>

@@ -118,11 +118,19 @@ def mudar_coluna(
     if coluna_anterior == dados.coluna:
         return insumo  # sem mudança real, não dispara email duplicado
 
+    if dados.coluna == ColunaKanban.EM_ANDAMENTO and not insumo.responsavel_chamado and not dados.responsavel_chamado:
+        raise HTTPException(
+            status_code=422,
+            detail="Selecione um responsável antes de mover para Em Andamento.",
+        )
+
     insumo.coluna = dados.coluna
 
     if dados.coluna == ColunaKanban.EM_ANDAMENTO:
         insumo.responsavel_nome = usuario.nome
         insumo.responsavel_email = usuario.email
+        if dados.responsavel_chamado:
+            insumo.responsavel_chamado = dados.responsavel_chamado
 
     if dados.coluna == ColunaKanban.CANCELADO:
         insumo.motivo_cancelamento = dados.motivo_cancelamento

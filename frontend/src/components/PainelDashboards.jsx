@@ -21,6 +21,25 @@ function corColuna(colunaId) {
   return COLUNAS.find((c) => c.id === colunaId)?.cor || "#6b7280";
 }
 
+// Delta vs. período anterior de mesmo tamanho — maisEbom decide a cor:
+// concluídos (mais é bom) vs. cancelados/tempo médio (menos é bom).
+function DeltaBadge({ atual, anterior, maisEbom }) {
+  if (anterior == null || atual == null) return null;
+  const diferenca = atual - anterior;
+  if (diferenca === 0) return <span className="dash-delta dash-delta-neutro">= período anterior</span>;
+
+  const subiu = diferenca > 0;
+  const bom = subiu === maisEbom;
+  const seta = subiu ? "▲" : "▼";
+  const valorAbs = Number.isInteger(diferenca) ? Math.abs(diferenca) : Math.abs(diferenca).toFixed(1);
+
+  return (
+    <span className={`dash-delta ${bom ? "dash-delta-bom" : "dash-delta-ruim"}`}>
+      {seta} {valorAbs} vs. período anterior
+    </span>
+  );
+}
+
 // Donut de "Status atual" via stroke-dasharray num círculo — sem lib de
 // gráfico. Reaproveita as cores que o próprio Kanban já usa pra cada
 // coluna (COLUNAS.cor), pra bater visualmente com o resto do app.
@@ -270,16 +289,31 @@ export default function PainelDashboards({ aberto, onFechar }) {
                     <div className="dash-kpi-card">
                       <span className="dash-kpi-numero">{dados.periodo.concluidos}</span>
                       <span className="dash-kpi-legenda">Concluídos no período</span>
+                      <DeltaBadge
+                        atual={dados.periodo.concluidos}
+                        anterior={dados.periodo_anterior?.concluidos}
+                        maisEbom={true}
+                      />
                     </div>
                     <div className="dash-kpi-card">
                       <span className="dash-kpi-numero">{dados.periodo.cancelados}</span>
                       <span className="dash-kpi-legenda">Cancelados no período</span>
+                      <DeltaBadge
+                        atual={dados.periodo.cancelados}
+                        anterior={dados.periodo_anterior?.cancelados}
+                        maisEbom={false}
+                      />
                     </div>
                     <div className="dash-kpi-card">
                       <span className="dash-kpi-numero">
                         {dados.tempo_medio_conclusao_dias ?? "—"}
                       </span>
                       <span className="dash-kpi-legenda">Dias em média até concluir</span>
+                      <DeltaBadge
+                        atual={dados.tempo_medio_conclusao_dias}
+                        anterior={dados.periodo_anterior?.tempo_medio_conclusao_dias}
+                        maisEbom={false}
+                      />
                     </div>
                   </div>
 
@@ -305,7 +339,9 @@ export default function PainelDashboards({ aberto, onFechar }) {
                             style={{ "--cor": corColuna(item.coluna) }}
                           />
                           <span className="dash-item-nome">{item.nome_insumo}</span>
-                          <span className="dash-item-dias">há {diasDesde(item.criado_em)}d</span>
+                          <span className={`dash-item-dias ${item.atrasado ? "dash-item-dias-atrasado" : ""}`}>
+                            há {diasDesde(item.criado_em)}d
+                          </span>
                         </li>
                       ))}
                     </ul>

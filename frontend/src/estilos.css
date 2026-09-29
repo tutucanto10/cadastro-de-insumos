@@ -552,6 +552,22 @@ body { margin: 0; }
   letter-spacing: 0.01em;
 }
 
+.card-atrasado {
+  border-color: var(--vermelho-600);
+  box-shadow: 0 0 0 1px var(--vermelho-600);
+}
+
+.card-tag-atrasado {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--vermelho-600);
+  background: var(--vermelho-50);
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 /* ---------- Botões ---------- */
 
 .btn-primario, .btn-secundario, .btn-perigo {
@@ -892,6 +908,16 @@ body { margin: 0; }
   line-height: 1.4;
 }
 
+.dash-delta {
+  font-size: 11px;
+  font-weight: 650;
+  margin-top: 2px;
+}
+
+.dash-delta-bom { color: var(--verde-600); }
+.dash-delta-ruim { color: var(--vermelho-600); }
+.dash-delta-neutro { color: var(--tinta-500); font-weight: 500; }
+
 .dash-secao-titulo {
   font-size: 13.5px;
   font-weight: 650;
@@ -938,6 +964,11 @@ body { margin: 0; }
   color: var(--tinta-500);
   font-size: 12px;
   flex-shrink: 0;
+}
+
+.dash-item-dias-atrasado {
+  color: var(--vermelho-600);
+  font-weight: 700;
 }
 
 .dash-carga {

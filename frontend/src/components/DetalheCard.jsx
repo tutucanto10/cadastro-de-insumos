@@ -17,6 +17,9 @@ export default function DetalheCard({
   const [motivoTexto, setMotivoTexto] = useState("");
   const [motivoErro, setMotivoErro] = useState("");
   const [insumoAtendenteTexto, setInsumoAtendenteTexto] = useState("");
+  const [responsavelObrigatorioAberto, setResponsavelObrigatorioAberto] = useState(false);
+  const [responsavelEscolhido, setResponsavelEscolhido] = useState("");
+  const [responsavelObrigatorioErro, setResponsavelObrigatorioErro] = useState("");
 
   useEffect(() => {
     if (!card) return;
@@ -47,6 +50,12 @@ export default function DetalheCard({
       setMotivoAberto(true);
       return;
     }
+    if (colunaId === "em-andamento" && !card.responsavel_chamado) {
+      setResponsavelEscolhido("");
+      setResponsavelObrigatorioErro("");
+      setResponsavelObrigatorioAberto(true);
+      return;
+    }
     onMudarColuna(card.id, colunaId);
   };
 
@@ -57,6 +66,15 @@ export default function DetalheCard({
     }
     onMudarColuna(card.id, "cancelado", motivoTexto.trim());
     setMotivoAberto(false);
+  };
+
+  const confirmarResponsavelObrigatorio = () => {
+    if (!responsavelEscolhido) {
+      setResponsavelObrigatorioErro("Selecione um responsável.");
+      return;
+    }
+    onMudarColuna(card.id, "em-andamento", undefined, responsavelEscolhido);
+    setResponsavelObrigatorioAberto(false);
   };
 
   return (
@@ -230,6 +248,42 @@ export default function DetalheCard({
               </button>
               <button type="button" className="btn-primario" onClick={confirmarCancelamento}>
                 Confirmar cancelamento
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {responsavelObrigatorioAberto && (
+        <div className="overlay overlay-motivo" role="dialog" aria-modal="true" aria-label="Selecionar responsável">
+          <div className="overlay-backdrop" onClick={() => setResponsavelObrigatorioAberto(false)} />
+          <div className="painel-motivo">
+            <h3>Quem vai atender esse chamado?</h3>
+            <p className="login-subtitulo">
+              Precisa de um responsável definido antes de mover pra "Em Andamento".
+            </p>
+            <select
+              className="select-responsavel-chamado"
+              autoFocus
+              value={responsavelEscolhido}
+              onChange={(e) => setResponsavelEscolhido(e.target.value)}
+            >
+              <option value="" disabled>
+                Selecione…
+              </option>
+              {RESPONSAVEIS_CHAMADO.map((nome) => (
+                <option key={nome} value={nome}>
+                  {nome}
+                </option>
+              ))}
+            </select>
+            {responsavelObrigatorioErro && <span className="campo-erro">{responsavelObrigatorioErro}</span>}
+            <div className="painel-motivo-acoes">
+              <button type="button" className="btn-secundario" onClick={() => setResponsavelObrigatorioAberto(false)}>
+                Voltar
+              </button>
+              <button type="button" className="btn-primario" onClick={confirmarResponsavelObrigatorio}>
+                Confirmar e mover
               </button>
             </div>
           </div>

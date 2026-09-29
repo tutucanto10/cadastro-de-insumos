@@ -110,3 +110,21 @@ class Insumo(Base):
         if self.tipo_local == TipoLocal.ESCRITORIO:
             return "Escritório/Stand"
         return self.obra or "Obra não especificada"
+
+    @property
+    def atrasado(self) -> bool:
+        """
+        True quando o chamado ainda está em "A Fazer" e já passou dos 3
+        dias úteis de prazo prometidos no email de notificação (ver
+        MENSAGENS_POR_COLUNA em services/email_service.py). Chamados que
+        já saíram de "A Fazer" não contam — o alerta é só pro estágio de
+        análise, não de finalização.
+        """
+        if self.coluna != ColunaKanban.A_FAZER or not self.criado_em:
+            return False
+        from datetime import datetime, timezone
+
+        from app.core.dias_uteis import somar_dias_uteis
+
+        prazo = somar_dias_uteis(self.criado_em, 3)
+        return datetime.now(timezone.utc) >= prazo

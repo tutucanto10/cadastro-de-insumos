@@ -52,10 +52,14 @@ export const api = {
       body: JSON.stringify(dados),
     }),
 
-  mudarColuna: (id, coluna, motivoCancelamento) =>
+  mudarColuna: (id, coluna, motivoCancelamento, responsavelChamado) =>
     chamarApi(`/api/insumos/${id}/coluna`, {
       method: "PATCH",
-      body: JSON.stringify({ coluna, motivo_cancelamento: motivoCancelamento }),
+      body: JSON.stringify({
+        coluna,
+        motivo_cancelamento: motivoCancelamento,
+        responsavel_chamado: responsavelChamado,
+      }),
     }),
 
   mudarResponsavelChamado: (id, responsavelChamado) =>
