@@ -99,6 +99,19 @@ export const api = {
     ),
 
   verificarSaude: () => chamarApi("/api/saude"),
+
+  listarAnexos: (id) => chamarApi(`/api/insumos/${id}/anexos`),
+
+  // Não usa chamarApi: a resposta é o arquivo em si (binário), não JSON —
+  // precisa dos headers de auth do mesmo jeito, mas devolve um Blob.
+  baixarAnexo: async (id, nome) => {
+    const headersAuth = await headersAutenticacao();
+    const resposta = await fetch(`${API_BASE}/api/insumos/${id}/anexos/${encodeURIComponent(nome)}`, {
+      headers: { ...headersAuth },
+    });
+    if (!resposta.ok) throw new ErroApi(`Erro ${resposta.status}`, resposta.status);
+    return resposta.blob();
+  },
 };
 
 export { ErroApi };

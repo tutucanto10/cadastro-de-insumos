@@ -10,6 +10,8 @@ export default function DetalheCard({
   onMudarInsumoAtendente,
   onExcluir,
   buscarEventosEmail,
+  buscarAnexos,
+  baixarAnexo,
 }) {
   const [eventos, setEventos] = useState([]);
   const [carregandoEventos, setCarregandoEventos] = useState(false);
@@ -20,6 +22,8 @@ export default function DetalheCard({
   const [responsavelObrigatorioAberto, setResponsavelObrigatorioAberto] = useState(false);
   const [responsavelEscolhido, setResponsavelEscolhido] = useState("");
   const [responsavelObrigatorioErro, setResponsavelObrigatorioErro] = useState("");
+  const [anexos, setAnexos] = useState([]);
+  const [anexoBaixando, setAnexoBaixando] = useState(null);
 
   useEffect(() => {
     if (!card) return;
@@ -29,6 +33,16 @@ export default function DetalheCard({
       .catch(() => setEventos([]))
       .finally(() => setCarregandoEventos(false));
   }, [card, buscarEventosEmail]);
+
+  useEffect(() => {
+    if (!card?.tem_anexo) {
+      setAnexos([]);
+      return;
+    }
+    buscarAnexos(card.id)
+      .then(setAnexos)
+      .catch(() => setAnexos([]));
+  }, [card?.id, card?.tem_anexo, buscarAnexos]);
 
   useEffect(() => {
     setInsumoAtendenteTexto(card?.insumo_atendente || "");
@@ -77,6 +91,23 @@ export default function DetalheCard({
     setResponsavelObrigatorioAberto(false);
   };
 
+  const baixarEAbrirAnexo = async (nome) => {
+    setAnexoBaixando(nome);
+    try {
+      const blob = await baixarAnexo(card.id, nome);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = nome;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert(`Não foi possível baixar o anexo: ${err.message}`);
+    } finally {
+      setAnexoBaixando(null);
+    }
+  };
+
   return (
     <div className="overlay" role="dialog" aria-modal="true" aria-label={`Detalhes de ${card.nome_insumo}`}>
       <div className="overlay-backdrop" onClick={onFechar} />
@@ -98,7 +129,24 @@ export default function DetalheCard({
             )}
           </div>
 
-          {card.tem_anexo && card.link_sharepoint && (
+          {card.tem_anexo && anexos.length > 0 && (
+            <div className="lista-anexos">
+              {anexos.map((anexo) => (
+                <button
+                  type="button"
+                  key={anexo.nome}
+                  className="link-anexo-sharepoint"
+                  onClick={() => baixarEAbrirAnexo(anexo.nome)}
+                  disabled={anexoBaixando === anexo.nome}
+                >
+                  <Icon.Paperclip className="ic-pequeno" />
+                  {anexoBaixando === anexo.nome ? "Baixando…" : anexo.nome}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {card.tem_anexo && anexos.length === 0 && card.link_sharepoint && (
             <a
               className="link-anexo-sharepoint"
               href={card.link_sharepoint}
@@ -106,7 +154,7 @@ export default function DetalheCard({
               rel="noopener noreferrer"
             >
               <Icon.Paperclip className="ic-pequeno" />
-              Ver anexo no SharePoint
+              Ver chamado no SharePoint
             </a>
           )}
 

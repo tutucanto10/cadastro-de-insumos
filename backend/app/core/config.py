@@ -52,6 +52,21 @@ SHAREPOINT_LIST_ID = os.getenv("SHAREPOINT_LIST_ID", "")
 # quando a sincronização real for ligada pela primeira vez.
 SHAREPOINT_SYNC_DESDE = os.getenv("SHAREPOINT_SYNC_DESDE", "")
 
+# --- Certificado pra baixar anexos (API REST clássica do SharePoint) ---
+# A Microsoft Graph não expõe anexo de item de SharePoint List — só a API
+# REST antiga (_api/web/...) tem esse endpoint, e ela só aceita token de
+# aplicação do Azure AD gerado por certificado (client secret não é aceito,
+# dá "Unsupported app only token"). Por isso essa credencial é separada das
+# AZURE_CLIENT_* acima, que continuam sendo client secret (usadas pela
+# Graph API) — ver services/sharepoint_rest_client.py.
+# SHAREPOINT_CERT_PRIVATE_KEY: conteúdo do private key PEM, com as quebras
+# de linha escapadas como "\n" (formato comum pra caber numa única
+# variável de ambiente).
+SHAREPOINT_CERT_PRIVATE_KEY = os.getenv("SHAREPOINT_CERT_PRIVATE_KEY", "").replace("\\n", "\n")
+# SHAREPOINT_CERT_THUMBPRINT: impressão digital SHA-1 do certificado (hex,
+# sem ":"), a mesma que aparece no Azure AD após subir o certificado.
+SHAREPOINT_CERT_THUMBPRINT = os.getenv("SHAREPOINT_CERT_THUMBPRINT", "")
+
 # Chave usada pelo GitHub Actions (ou qualquer automação) pra chamar
 # POST /api/sincronizacao/sharepoint — não depende do login de usuário,
 # já que é uma chamada sistema-a-sistema (ver routers/sincronizacao.py).

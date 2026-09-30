@@ -278,6 +278,8 @@ function QuadroPrincipal({ usuario, onSair }) {
         onMudarInsumoAtendente={mudarInsumoAtendente}
         onExcluir={excluirCard}
         buscarEventosEmail={api.listarEventosEmail}
+        buscarAnexos={api.listarAnexos}
+        baixarAnexo={api.baixarAnexo}
       />
     </div>
   );

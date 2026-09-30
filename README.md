@@ -140,8 +140,9 @@ Tenant ID e Client ID:
 | Integração | Permissão | Tipo | Depende de login de usuário? |
 |---|---|---|---|
 | Login (MSAL) | `User.Read` | Delegated | — |
-| Sincronização SharePoint | `Sites.Read.All` | Application | Não (client credentials) |
+| Sincronização SharePoint (Graph) | `Sites.Read.All` | Application | Não (client credentials) |
 | Email (Outlook) | `Mail.Send` | Application | Não (client credentials) |
+| Anexos (API REST do SharePoint, não Graph) | `Sites.Read.All` | Application | Não (client credentials por certificado — ver seção "Baixar anexos") |
 
 ### Configurar o App Registration
 
@@ -256,6 +257,42 @@ já está pronta — basta ter as credenciais `AZURE_*` (as mesmas do
 SharePoint) e `EMAIL_REMETENTE` preenchidas que os emails passam a sair de
 verdade. Deixando `EMAIL_REMETENTE` vazio, continua simulado (só loga no
 console).
+
+---
+
+## Baixar anexos da SharePoint List
+
+A Microsoft Graph **não expõe** o conteúdo de anexo de item de SharePoint
+List — só a API REST clássica (`_api/web/...`) tem esse endpoint, e ela só
+aceita token de aplicação do Azure AD gerado por **certificado** (client
+secret dá `"Unsupported app only token"`). Por isso essa credencial é
+separada da `AZURE_CLIENT_SECRET` usada pelo resto da integração — ver
+`backend/app/services/sharepoint_rest_client.py`.
+
+1. Gera um certificado autoassinado (ou use um já existente):
+   ```bash
+   openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 730 -nodes -subj "/CN=CadastroInsumosSharePoint"
+   openssl x509 -in cert.pem -outform der -out cert.cer
+   openssl x509 -in cert.pem -noout -fingerprint -sha1   # thumbprint
+   ```
+2. No mesmo App Registration (**Permissões de APIs** → **+ Adicionar uma
+   permissão** → aba **"APIs usadas pela minha organização"** → busca
+   **"SharePoint"** — não é o Microsoft Graph, é uma API separada) →
+   **Permissões de aplicativo** → `Sites.Read.All` → adiciona → **Conceder
+   consentimento do administrador**.
+3. Em **Certificados e segredos → Certificados → Carregar certificado**,
+   sobe o `cert.cer` gerado no passo 1.
+4. Preenche no `.env` do backend (a chave privada fica só aqui, nunca sobe
+   pro Azure nem pro git):
+   ```env
+   SHAREPOINT_CERT_PRIVATE_KEY=<conteúdo do key.pem, com as quebras de linha trocadas por \n>
+   SHAREPOINT_CERT_THUMBPRINT=<hex do fingerprint SHA-1, sem ":">
+   ```
+
+Com isso preenchido, `GET /api/insumos/{id}/anexos` lista os arquivos do
+item e `GET /api/insumos/{id}/anexos/{nome}` baixa o conteúdo de verdade —
+sem essas variáveis, o painel de detalhes volta a mostrar só o link pra
+página do item no SharePoint (como antes).
 
 ---
 

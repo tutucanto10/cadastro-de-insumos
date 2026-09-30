@@ -64,6 +64,10 @@ class InsumoMudarResponsavelChamado(BaseModel):
     responsavel_chamado: ResponsavelChamado
 
 
+class AnexoItem(BaseModel):
+    nome: str
+
+
 class InsumoMudarInsumoAtendente(BaseModel):
     insumo_atendente: str
 

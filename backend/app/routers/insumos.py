@@ -4,7 +4,7 @@ Endpoints REST do recurso Insumo (os cards do Kanban).
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -12,6 +12,7 @@ from app.core.auth import obter_usuario_atual, UsuarioAtual
 from app.core.database import get_db
 from app.models.insumo import Insumo, TipoLocal, ColunaKanban
 from app.models.schemas import (
+    AnexoItem,
     InsumoCriar,
     InsumoMudarColuna,
     InsumoMudarResponsavelChamado,
@@ -19,6 +20,7 @@ from app.models.schemas import (
     InsumoResposta,
 )
 from app.services.email_service import notificar_mudanca_coluna
+from app.services import sharepoint_rest_client
 
 router = APIRouter(prefix="/api/insumos", tags=["insumos"])
 
@@ -183,6 +185,49 @@ def mudar_insumo_atendente(
     db.commit()
     db.refresh(insumo)
     return insumo
+
+
+@router.get("/{insumo_id}/anexos", response_model=list[AnexoItem])
+def listar_anexos(
+    insumo_id: str,
+    db: Session = Depends(get_db),
+    _usuario: UsuarioAtual = Depends(obter_usuario_atual),
+):
+    """
+    Lista os anexos do item na SharePoint List (nome de cada arquivo) —
+    só existe pra itens importados de lá com `tem_anexo=True`.
+    """
+    insumo = db.query(Insumo).filter(Insumo.id == insumo_id).first()
+    if not insumo:
+        raise HTTPException(status_code=404, detail="Insumo não encontrado.")
+    if not insumo.tem_anexo or not insumo.sharepoint_item_id:
+        return []
+    if not sharepoint_rest_client.CREDENCIAIS_CONFIGURADAS:
+        raise HTTPException(status_code=501, detail="Certificado do SharePoint não configurado.")
+    return sharepoint_rest_client.listar_anexos(insumo.sharepoint_item_id)
+
+
+@router.get("/{insumo_id}/anexos/{nome_arquivo}")
+def baixar_anexo(
+    insumo_id: str,
+    nome_arquivo: str,
+    db: Session = Depends(get_db),
+    _usuario: UsuarioAtual = Depends(obter_usuario_atual),
+):
+    insumo = db.query(Insumo).filter(Insumo.id == insumo_id).first()
+    if not insumo:
+        raise HTTPException(status_code=404, detail="Insumo não encontrado.")
+    if not insumo.tem_anexo or not insumo.sharepoint_item_id:
+        raise HTTPException(status_code=404, detail="Esse insumo não tem anexo.")
+    if not sharepoint_rest_client.CREDENCIAIS_CONFIGURADAS:
+        raise HTTPException(status_code=501, detail="Certificado do SharePoint não configurado.")
+
+    conteudo, content_type = sharepoint_rest_client.baixar_anexo(insumo.sharepoint_item_id, nome_arquivo)
+    return Response(
+        content=conteudo,
+        media_type=content_type,
+        headers={"Content-Disposition": f'attachment; filename="{nome_arquivo}"'},
+    )
 
 
 @router.delete("/{insumo_id}", status_code=204)
