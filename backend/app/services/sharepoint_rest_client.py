@@ -50,6 +50,20 @@ def _diagnosticar_thumbprint(valor: str) -> str:
     return "; ".join(partes)
 
 
+def _diagnosticar_chave_privada(valor: str) -> str:
+    """
+    "Could not parse the provided public key" do PyJWT não diz por que —
+    aqui a gente confere só a "forma" da PEM (tamanho, cabeçalho/rodapé,
+    número de linhas) sem imprimir o conteúdo, que esse sim é sensível.
+    """
+    linhas = valor.split("\n")
+    return (
+        f"tamanho={len(valor)}; linhas={len(linhas)}; "
+        f"começa com BEGIN={valor.startswith('-----BEGIN')}; "
+        f"termina com END={valor.rstrip().endswith('-----END PRIVATE KEY-----')}"
+    )
+
+
 def _obter_token() -> str:
     if len(SHAREPOINT_CERT_THUMBPRINT) != 40 or any(
         c.lower() not in "0123456789abcdef" for c in SHAREPOINT_CERT_THUMBPRINT
@@ -57,22 +71,33 @@ def _obter_token() -> str:
         raise ValueError(
             f"SHAREPOINT_CERT_THUMBPRINT inválido — {_diagnosticar_thumbprint(SHAREPOINT_CERT_THUMBPRINT)}"
         )
+    if not SHAREPOINT_CERT_PRIVATE_KEY.startswith("-----BEGIN") or "-----END" not in SHAREPOINT_CERT_PRIVATE_KEY:
+        raise ValueError(
+            f"SHAREPOINT_CERT_PRIVATE_KEY não parece uma PEM válida — "
+            f"{_diagnosticar_chave_privada(SHAREPOINT_CERT_PRIVATE_KEY)}"
+        )
     token_endpoint = f"https://login.microsoftonline.com/{AZURE_TENANT_ID}/oauth2/v2.0/token"
     x5t = base64.urlsafe_b64encode(bytes.fromhex(SHAREPOINT_CERT_THUMBPRINT)).decode().rstrip("=")
     agora = int(time.time())
-    assertion = jwt.encode(
-        {
-            "aud": token_endpoint,
-            "iss": AZURE_CLIENT_ID,
-            "sub": AZURE_CLIENT_ID,
-            "jti": str(uuid.uuid4()),
-            "nbf": agora,
-            "exp": agora + 300,
-        },
-        SHAREPOINT_CERT_PRIVATE_KEY,
-        algorithm="RS256",
-        headers={"x5t": x5t},
-    )
+    try:
+        assertion = jwt.encode(
+            {
+                "aud": token_endpoint,
+                "iss": AZURE_CLIENT_ID,
+                "sub": AZURE_CLIENT_ID,
+                "jti": str(uuid.uuid4()),
+                "nbf": agora,
+                "exp": agora + 300,
+            },
+            SHAREPOINT_CERT_PRIVATE_KEY,
+            algorithm="RS256",
+            headers={"x5t": x5t},
+        )
+    except Exception as exc:
+        raise ValueError(
+            f"Falha ao assinar com SHAREPOINT_CERT_PRIVATE_KEY ({exc}) — "
+            f"{_diagnosticar_chave_privada(SHAREPOINT_CERT_PRIVATE_KEY)}"
+        ) from exc
     resp = requests.post(
         token_endpoint,
         data={
