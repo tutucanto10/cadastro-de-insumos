@@ -62,10 +62,12 @@ SHAREPOINT_SYNC_DESDE = os.getenv("SHAREPOINT_SYNC_DESDE", "")
 # SHAREPOINT_CERT_PRIVATE_KEY: conteúdo do private key PEM, com as quebras
 # de linha escapadas como "\n" (formato comum pra caber numa única
 # variável de ambiente).
-SHAREPOINT_CERT_PRIVATE_KEY = os.getenv("SHAREPOINT_CERT_PRIVATE_KEY", "").replace("\\n", "\n")
+SHAREPOINT_CERT_PRIVATE_KEY = os.getenv("SHAREPOINT_CERT_PRIVATE_KEY", "").strip().replace("\\n", "\n")
 # SHAREPOINT_CERT_THUMBPRINT: impressão digital SHA-1 do certificado (hex,
 # sem ":"), a mesma que aparece no Azure AD após subir o certificado.
-SHAREPOINT_CERT_THUMBPRINT = os.getenv("SHAREPOINT_CERT_THUMBPRINT", "")
+# .strip() pra tolerar espaço/quebra de linha acidental ao colar o valor
+# — bytes.fromhex() não aceita nenhum caractere fora do hexadecimal.
+SHAREPOINT_CERT_THUMBPRINT = os.getenv("SHAREPOINT_CERT_THUMBPRINT", "").strip()
 
 # Chave usada pelo GitHub Actions (ou qualquer automação) pra chamar
 # POST /api/sincronizacao/sharepoint — não depende do login de usuário,
