@@ -32,7 +32,31 @@ CREDENCIAIS_CONFIGURADAS = bool(
 _SHAREPOINT_RESOURCE = f"https://{SITE_WEB_URL.split('/')[2]}"  # "https://dommainc.sharepoint.com"
 
 
+def _diagnosticar_thumbprint(valor: str) -> str:
+    """
+    bytes.fromhex() só diz "non-hexadecimal number found... at position N",
+    sem dizer qual caractere é nem o tamanho da string — isso aqui monta um
+    diagnóstico completo (tamanho, caracteres inválidos e posição) sem
+    vazar segredo nenhum: o thumbprint não é sensível, é só a impressão
+    digital pública do certificado.
+    """
+    invalidos = [(i, c) for i, c in enumerate(valor) if c.lower() not in "0123456789abcdef"]
+    partes = [f"tamanho={len(valor)} (esperado 40)"]
+    if invalidos:
+        partes.append(
+            "caracteres inválidos: "
+            + ", ".join(f"posição {i}={c!r} (0x{ord(c):02x})" for i, c in invalidos[:5])
+        )
+    return "; ".join(partes)
+
+
 def _obter_token() -> str:
+    if len(SHAREPOINT_CERT_THUMBPRINT) != 40 or any(
+        c.lower() not in "0123456789abcdef" for c in SHAREPOINT_CERT_THUMBPRINT
+    ):
+        raise ValueError(
+            f"SHAREPOINT_CERT_THUMBPRINT inválido — {_diagnosticar_thumbprint(SHAREPOINT_CERT_THUMBPRINT)}"
+        )
     token_endpoint = f"https://login.microsoftonline.com/{AZURE_TENANT_ID}/oauth2/v2.0/token"
     x5t = base64.urlsafe_b64encode(bytes.fromhex(SHAREPOINT_CERT_THUMBPRINT)).decode().rstrip("=")
     agora = int(time.time())
