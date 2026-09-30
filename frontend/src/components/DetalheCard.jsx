@@ -2,6 +2,19 @@ import React, { useEffect, useState } from "react";
 import { Icon } from "./Icon.jsx";
 import { COLUNAS, RESPONSAVEIS_CHAMADO, formatarDataBR, formatarHora } from "../constants.js";
 
+// Tipos que o navegador consegue exibir numa aba — pros demais (docx,
+// xlsx...) não tem o que "abrir", então baixa igual antes.
+const MIME_VISUALIZAVEL_POR_EXTENSAO = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  gif: "image/gif",
+  webp: "image/webp",
+  bmp: "image/bmp",
+  svg: "image/svg+xml",
+  pdf: "application/pdf",
+};
+
 export default function DetalheCard({
   card,
   onFechar,
@@ -98,16 +111,35 @@ export default function DetalheCard({
   };
 
   const baixarEAbrirAnexo = async (nome) => {
+    const extensao = nome.split(".").pop().toLowerCase();
+    const mimeVisualizavel = MIME_VISUALIZAVEL_POR_EXTENSAO[extensao];
+    // abre a aba já no clique (síncrono), antes do await — navegador
+    // bloqueia popup aberto depois de uma operação assíncrona
+    const novaAba = mimeVisualizavel ? window.open("", "_blank") : null;
+
     setAnexoBaixando(nome);
     try {
-      const blob = await baixarAnexo(card.id, nome);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = nome;
-      a.click();
-      URL.revokeObjectURL(url);
+      const blobOriginal = await baixarAnexo(card.id, nome);
+
+      if (mimeVisualizavel && novaAba) {
+        // a SharePoint REST API sempre devolve application/octet-stream,
+        // então o tipo certo pra exibir (imagem/PDF) vem da extensão, não
+        // do Content-Type da resposta
+        const blob = new Blob([blobOriginal], { type: mimeVisualizavel });
+        const url = URL.createObjectURL(blob);
+        novaAba.location.href = url;
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      } else {
+        novaAba?.close();
+        const url = URL.createObjectURL(blobOriginal);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = nome;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
     } catch (err) {
+      novaAba?.close();
       alert(`Não foi possível baixar o anexo: ${err.message}`);
     } finally {
       setAnexoBaixando(null);
