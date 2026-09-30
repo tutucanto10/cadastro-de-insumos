@@ -24,6 +24,7 @@ export default function DetalheCard({
   const [responsavelObrigatorioErro, setResponsavelObrigatorioErro] = useState("");
   const [anexos, setAnexos] = useState([]);
   const [anexoBaixando, setAnexoBaixando] = useState(null);
+  const [anexosErro, setAnexosErro] = useState("");
 
   useEffect(() => {
     if (!card) return;
@@ -37,11 +38,16 @@ export default function DetalheCard({
   useEffect(() => {
     if (!card?.tem_anexo) {
       setAnexos([]);
+      setAnexosErro("");
       return;
     }
+    setAnexosErro("");
     buscarAnexos(card.id)
       .then(setAnexos)
-      .catch(() => setAnexos([]));
+      .catch((err) => {
+        setAnexos([]);
+        setAnexosErro(err?.message || String(err));
+      });
   }, [card?.id, card?.tem_anexo, buscarAnexos]);
 
   useEffect(() => {
@@ -156,6 +162,12 @@ export default function DetalheCard({
               <Icon.Paperclip className="ic-pequeno" />
               Ver chamado no SharePoint
             </a>
+          )}
+
+          {anexosErro && (
+            <p className="detalhe-texto-sutil" style={{ color: "var(--vermelho-600)", margin: "-12px 0 18px" }}>
+              Anexo indisponível: {anexosErro}
+            </p>
           )}
 
           <div className="detalhe-grade">
