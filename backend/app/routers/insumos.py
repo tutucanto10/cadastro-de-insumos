@@ -204,7 +204,10 @@ def listar_anexos(
         return []
     if not sharepoint_rest_client.CREDENCIAIS_CONFIGURADAS:
         raise HTTPException(status_code=501, detail="Certificado do SharePoint não configurado.")
-    return sharepoint_rest_client.listar_anexos(insumo.sharepoint_item_id)
+    try:
+        return sharepoint_rest_client.listar_anexos(insumo.sharepoint_item_id)
+    except Exception as exc:  # noqa: BLE001 — mostra o motivo real em vez de um 500 genérico
+        raise HTTPException(status_code=502, detail=f"Falha ao listar anexos: {exc}") from exc
 
 
 @router.get("/{insumo_id}/anexos/{nome_arquivo}")
@@ -222,7 +225,10 @@ def baixar_anexo(
     if not sharepoint_rest_client.CREDENCIAIS_CONFIGURADAS:
         raise HTTPException(status_code=501, detail="Certificado do SharePoint não configurado.")
 
-    conteudo, content_type = sharepoint_rest_client.baixar_anexo(insumo.sharepoint_item_id, nome_arquivo)
+    try:
+        conteudo, content_type = sharepoint_rest_client.baixar_anexo(insumo.sharepoint_item_id, nome_arquivo)
+    except Exception as exc:  # noqa: BLE001 — mostra o motivo real em vez de um 500 genérico
+        raise HTTPException(status_code=502, detail=f"Falha ao baixar anexo: {exc}") from exc
     return Response(
         content=conteudo,
         media_type=content_type,
